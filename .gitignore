@@ -9,3 +9,4 @@ dist/
 *.user
 *.suo
 TestResults/
+.codex/config.toml
