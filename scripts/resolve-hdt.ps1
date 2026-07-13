@@ -16,7 +16,7 @@ if (Test-Path -LiteralPath (Join-Path $resolved 'HearthstoneDeckTracker.exe')) {
 }
 
 New-Item -ItemType Directory -Force -Path $destinationPath | Out-Null
-$packageName = "HearthstoneDeckTracker-$Version.nupkg"
+$packageName = "HearthstoneDeckTracker-$Version-full.nupkg"
 $packagePath = Join-Path $destinationPath $packageName
 if (-not (Test-Path -LiteralPath $packagePath)) {
     if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
