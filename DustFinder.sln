@@ -1,0 +1,32 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DustFinder.Core", "src\DustFinder.Core\DustFinder.Core.csproj", "{6C66E923-C1CD-439F-9190-73F715C5B784}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DustFinder.Plugin", "src\DustFinder.Plugin\DustFinder.Plugin.csproj", "{216F706D-E907-407B-94BC-C3B165D8F1C2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DustFinder.Core.Tests", "tests\DustFinder.Core.Tests\DustFinder.Core.Tests.csproj", "{1D6AC6A2-2CA4-4669-AB1B-C60F0FCD2237}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6C66E923-C1CD-439F-9190-73F715C5B784}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6C66E923-C1CD-439F-9190-73F715C5B784}.Debug|x64.Build.0 = Debug|Any CPU
+		{6C66E923-C1CD-439F-9190-73F715C5B784}.Release|x64.ActiveCfg = Release|Any CPU
+		{6C66E923-C1CD-439F-9190-73F715C5B784}.Release|x64.Build.0 = Release|Any CPU
+		{216F706D-E907-407B-94BC-C3B165D8F1C2}.Debug|x64.ActiveCfg = Debug|x64
+		{216F706D-E907-407B-94BC-C3B165D8F1C2}.Debug|x64.Build.0 = Debug|x64
+		{216F706D-E907-407B-94BC-C3B165D8F1C2}.Release|x64.ActiveCfg = Release|x64
+		{216F706D-E907-407B-94BC-C3B165D8F1C2}.Release|x64.Build.0 = Release|x64
+		{1D6AC6A2-2CA4-4669-AB1B-C60F0FCD2237}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1D6AC6A2-2CA4-4669-AB1B-C60F0FCD2237}.Debug|x64.Build.0 = Debug|Any CPU
+		{1D6AC6A2-2CA4-4669-AB1B-C60F0FCD2237}.Release|x64.ActiveCfg = Release|Any CPU
+		{1D6AC6A2-2CA4-4669-AB1B-C60F0FCD2237}.Release|x64.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
+
