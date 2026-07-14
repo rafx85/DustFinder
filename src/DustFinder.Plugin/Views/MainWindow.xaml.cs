@@ -47,9 +47,13 @@ public partial class MainWindow : Window
 		var compact = availableWidth < CompactLayoutWidth;
 		var showPreviews = availableWidth >= PreviewLayoutWidth;
 		var previewVisibility = showPreviews ? Visibility.Visible : Visibility.Collapsed;
+		var previewWidth = compact ? 225 : 245;
 		CollectionCardPreview.Visibility = previewVisibility;
+		CollectionCardPreview.Width = previewWidth;
 		PlanCardPreview.Visibility = previewVisibility;
+		PlanCardPreview.Width = previewWidth;
 		ProtectedCardPreview.Visibility = previewVisibility;
+		ProtectedCardPreview.Width = previewWidth;
 
 		SetColumnVisibility(CollectionGrid, !compact, "Type", "Owned", "Deck max", "Keep", "Dust ea.");
 		SetColumnVisibility(PlanGrid, !compact, "Type", "Owned", "Deck max", "Keep", "Dust ea.", "Assessment");

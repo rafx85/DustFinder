@@ -146,17 +146,17 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" MinWidth="200" />
                             <DataGridTextColumn Header="Expansion" Binding="{Binding Expansion}" Width="SizeToCells" MinWidth="140" MaxWidth="220" />
-                            <DataGridTextColumn Header="Rarity" Binding="{Binding Rarity}" Width="85" />
-                            <DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="150" />
+                            <DataGridTextColumn Header="Rarity" Binding="{Binding Rarity}" Width="85" MinWidth="70" />
+                            <DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="150" MinWidth="110" />
                             <DataGridTextColumn Header="Type" Binding="{Binding CardType}" Width="95" />
-							<DataGridTextColumn Header="Premium" Binding="{Binding Premium}" SortMemberPath="PremiumSortOrder" Width="90" />
+							<DataGridTextColumn Header="Premium" Binding="{Binding Premium}" SortMemberPath="PremiumSortOrder" Width="90" MinWidth="75" />
 							<DataGridTextColumn Header="Owned" Binding="{Binding Owned}" Width="65" />
 							<DataGridTextColumn Header="Deck max" Binding="{Binding DeckMax}" Width="75" />
                             <DataGridTextColumn Header="Keep" Binding="{Binding Keep}" Width="55" />
-                            <DataGridTextColumn Header="Extra" Binding="{Binding Extra}" Width="55" />
+                            <DataGridTextColumn Header="Extra" Binding="{Binding Extra}" Width="55" MinWidth="45" />
                             <DataGridTextColumn Header="Dust ea." Binding="{Binding DustEach}" Width="70" />
-                            <DataGridTextColumn Header="Potential" Binding="{Binding PotentialDust}" Width="75" />
-                            <DataGridTextColumn Header="Assessment" Binding="{Binding Safety}" Width="175" />
+                            <DataGridTextColumn Header="Potential" Binding="{Binding PotentialDust}" Width="75" MinWidth="65" />
+                            <DataGridTextColumn Header="Assessment" Binding="{Binding Safety}" Width="175" MinWidth="150" />
                         </DataGrid.Columns>
                     </DataGrid>
 						<Border x:Name="CollectionCardPreview" Grid.Column="1" Width="245" Margin="8,0,0,0"
@@ -246,17 +246,17 @@
                         <DataGrid.Columns>
 							<DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" MinWidth="200" />
 							<DataGridTextColumn Header="Expansion" Binding="{Binding Expansion}" Width="SizeToCells" MinWidth="140" MaxWidth="220" />
-							<DataGridTextColumn Header="Rarity" Binding="{Binding Rarity}" Width="85" />
-							<DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="150" />
+							<DataGridTextColumn Header="Rarity" Binding="{Binding Rarity}" Width="85" MinWidth="70" />
+							<DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="150" MinWidth="110" />
 							<DataGridTextColumn Header="Type" Binding="{Binding CardType}" Width="95" />
-							<DataGridTextColumn Header="Premium" Binding="{Binding Premium}" SortMemberPath="PremiumSortOrder" Width="90" />
+							<DataGridTextColumn Header="Premium" Binding="{Binding Premium}" SortMemberPath="PremiumSortOrder" Width="90" MinWidth="75" />
 							<DataGridTextColumn Header="Owned" Binding="{Binding Owned}" Width="65" />
 							<DataGridTextColumn Header="Deck max" Binding="{Binding DeckMax}" Width="75" />
 							<DataGridTextColumn Header="Keep" Binding="{Binding Keep}" Width="55" />
-							<DataGridTextColumn Header="Extra" Binding="{Binding Extra}" Width="55" />
+							<DataGridTextColumn Header="Extra" Binding="{Binding Extra}" Width="55" MinWidth="45" />
 							<DataGridTextColumn Header="Dust ea." Binding="{Binding DustEach}" Width="70" />
-							<DataGridTextColumn Header="Potential" Binding="{Binding PotentialDust}" Width="75" />
-							<DataGridTextColumn Header="Assessment" Binding="{Binding Safety}" Width="175" />
+							<DataGridTextColumn Header="Potential" Binding="{Binding PotentialDust}" Width="75" MinWidth="65" />
+							<DataGridTextColumn Header="Assessment" Binding="{Binding Safety}" Width="175" MinWidth="150" />
 							<DataGridTextColumn Header="Plan copies" Binding="{Binding Copies}" Width="85" />
 							<DataGridTextColumn Header="Plan dust" Binding="{Binding Total}" Width="80" />
                         </DataGrid.Columns>

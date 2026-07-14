@@ -56,8 +56,15 @@ try {
 	[void]$applyResponsiveLayout.Invoke($window, @())
 	$collectionTypeColumn = $collectionGrid.Columns | Where-Object { $_.Header -eq 'Type' } | Select-Object -First 1
 	if ($window.FindName('CollectionCardPreview').Visibility.ToString() -ne 'Visible' -or
+		$window.FindName('CollectionCardPreview').Width -ne 225 -or
 		$collectionTypeColumn.Visibility.ToString() -ne 'Collapsed') {
 		throw 'The normal-window layout does not preserve the preview while releasing space for primary card columns.'
+	}
+	foreach ($header in @('Rarity', 'Class', 'Premium', 'Extra', 'Potential', 'Assessment')) {
+		$column = $collectionGrid.Columns | Where-Object { $_.Header -eq $header } | Select-Object -First 1
+		if ($null -eq $column -or $column.MinWidth -lt 45) {
+			throw "The compact $header column can collapse below a readable width."
+		}
 	}
 	$window.Width = 950
 	[void]$applyResponsiveLayout.Invoke($window, @())
@@ -67,6 +74,7 @@ try {
 	$window.Width = 1800
 	[void]$applyResponsiveLayout.Invoke($window, @())
 	if ($window.FindName('CollectionCardPreview').Visibility.ToString() -ne 'Visible' -or
+		$window.FindName('CollectionCardPreview').Width -ne 245 -or
 		$collectionTypeColumn.Visibility.ToString() -ne 'Visible') {
 		throw 'The wide layout does not restore the card preview and detail columns.'
 	}
