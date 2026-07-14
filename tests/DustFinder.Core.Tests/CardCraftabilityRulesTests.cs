@@ -48,6 +48,17 @@ public sealed class CardCraftabilityRulesTests
 	}
 
 	[Fact]
+	public void HeroSkinIsNotTreatedAsCraftableCard()
+	{
+		Assert.True(CardCraftabilityRules.IsCosmeticOnlySet("HERO_SKINS"));
+		Assert.False(CardCraftabilityRules.IsPotentiallyCraftable(
+			true,
+			CardRarity.Epic,
+			"HERO_SKINS",
+			"HERO_01a"));
+	}
+
+	[Fact]
 	public void RegularCollectibleCardRemainsPotentiallyCraftable()
 	{
 		Assert.True(CardCraftabilityRules.IsPotentiallyCraftable(

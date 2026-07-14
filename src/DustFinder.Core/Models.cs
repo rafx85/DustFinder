@@ -78,7 +78,7 @@ public sealed class CollectionSnapshot
 [DataContract]
 public sealed class UserSettings
 {
-	[DataMember(Order = 1)] public int SchemaVersion { get; set; } = 4;
+	[DataMember(Order = 1)] public int SchemaVersion { get; set; } = 5;
 	[DataMember(Order = 2)] public int KeepNonLegendary { get; set; } = 2;
 	[DataMember(Order = 3)] public int KeepLegendary { get; set; } = 1;
 	[DataMember(Order = 4)] public bool NormalCountsTowardKeep { get; set; } = true;
@@ -92,6 +92,7 @@ public sealed class UserSettings
 	[DataMember(Order = 12)] public bool ProtectGoldenPremium { get; set; }
 	[DataMember(Order = 13)] public bool ProtectSignaturePremium { get; set; }
 	[DataMember(Order = 14)] public bool ProtectDiamondPremium { get; set; }
+	[DataMember(Order = 15)] public HashSet<string> ProtectedExpansions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
 	public bool CountsTowardKeep(PremiumType premium) => premium switch
 	{
@@ -110,6 +111,9 @@ public sealed class UserSettings
 		PremiumType.Diamond => ProtectDiamondPremium,
 		_ => false
 	};
+
+	public bool IsExpansionProtected(string? expansion) => !string.IsNullOrWhiteSpace(expansion)
+		&& ProtectedExpansions?.Contains(expansion!) == true;
 }
 
 [DataContract]
@@ -155,8 +159,9 @@ public sealed class AnalysisResult
 	public bool IsInPastedDeck { get; set; }
 	public bool IsManuallyUncraftable { get; set; }
 	public bool IsPremiumProtected { get; set; }
+	public bool IsExpansionProtected { get; set; }
 	public bool IsDisenchantable { get; set; }
-	public bool IsSafeByRules => IsDisenchantable && !IsProtected && !IsInPastedDeck && !IsPremiumProtected && RecommendedCopies > 0;
+	public bool IsSafeByRules => IsDisenchantable && !IsProtected && !IsInPastedDeck && !IsPremiumProtected && !IsExpansionProtected && RecommendedCopies > 0;
 	public bool IsUnusedByKnownDecks => UsedByKnownDecks == 0;
 
 	public string SafetyLabel
@@ -171,6 +176,8 @@ public sealed class AnalysisResult
 				return "Marked uncraftable by you";
 			if(IsPremiumProtected)
 				return "Protected premium type";
+			if(IsExpansionProtected)
+				return "Protected expansion";
 			if(!IsDisenchantable)
 				return "Cannot be disenchanted";
 			if(RecommendedCopies > 0)

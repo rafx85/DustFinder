@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DustFinder.Core;
+using DustFinder.Plugin.Infrastructure;
 
 namespace DustFinder.Plugin.ViewModels;
 
@@ -55,6 +56,7 @@ public sealed class CardRowViewModel
 	public bool IsInPastedDeck => Result.IsInPastedDeck;
 	public bool IsManuallyUncraftable => Result.IsManuallyUncraftable;
 	public bool IsPremiumProtected => Result.IsPremiumProtected;
+	public bool IsExpansionProtected => Result.IsExpansionProtected;
 	public string ProtectionReason
 	{
 		get
@@ -66,10 +68,20 @@ public sealed class CardRowViewModel
 				reasons.Add("Used in pasted deck");
 			if(IsPremiumProtected)
 				reasons.Add("Protected premium type");
+			if(IsExpansionProtected)
+				reasons.Add("Protected expansion");
 			return string.Join(" and ", reasons);
 		}
 	}
 	public bool IsSafeByRules => Result.IsSafeByRules;
+}
+
+public sealed class ExpansionProtectionOption : BindableBase
+{
+	private bool _isProtected;
+	public string Key { get; set; } = string.Empty;
+	public string Name { get; set; } = string.Empty;
+	public bool IsProtected { get => _isProtected; set => Set(ref _isProtected, value); }
 }
 
 public sealed class PlanRowViewModel

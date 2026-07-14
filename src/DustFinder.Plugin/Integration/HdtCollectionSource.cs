@@ -32,6 +32,8 @@ public sealed class HdtCollectionSource : IHdtCollectionSource
 		{
 			if(!Cards.AllByDbfId.TryGetValue(pair.Key, out var card))
 				continue;
+			if(CardCraftabilityRules.IsCosmeticOnlySet(card.Set.ToString()))
+				continue;
 			var metadata = CreateMetadata(card);
 			var counts = pair.Value;
 			for(var premiumIndex = 0; premiumIndex < 4; premiumIndex++)

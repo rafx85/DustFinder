@@ -140,6 +140,8 @@
                     </DataGrid>
                     <DockPanel Grid.Row="2" Margin="0,6,0,0">
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+							<Button x:Name="CopyCardNameButton" Content="Copy name" Command="{Binding CopyNameCommand}"
+									ToolTip="Copy the selected card's exact name for pasting into Hearthstone search." />
                             <Button Content="Add selected to plan" Command="{Binding AddSelectedCommand}"
                                     ToolTip="Select multiple rows with Ctrl or Shift, then add one copy of each selected card." />
                             <Button Content="Protect selected" Command="{Binding ProtectCommand}"
@@ -336,7 +338,7 @@
 						<StackPanel Orientation="Horizontal" VerticalAlignment="Center">
 							<TextBlock x:Name="ProtectedCountText" Text="{Binding ProtectedCountLabel}" FontWeight="SemiBold" Margin="0,0,18,0" />
 							<TextBlock Foreground="#AEB5C2"
-									   Text="Pasted-deck protection is removed in Pasted decks; premium-type protection is changed in Settings." />
+									   Text="Pasted-deck protection is removed in Pasted decks; premium-type and expansion protection are changed in Settings." />
 						</StackPanel>
                     </DockPanel>
                 </Grid>
@@ -395,7 +397,8 @@
             </TabItem>
 
             <TabItem Header="Settings">
-                <StackPanel Margin="18" MaxWidth="620" HorizontalAlignment="Left">
+				<ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+				<StackPanel Margin="18" MaxWidth="760" HorizontalAlignment="Left">
                     <TextBlock Text="Copies to keep" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8" />
                     <DockPanel Margin="0,3"><TextBox DockPanel.Dock="Right" Width="90" Text="{Binding Settings.KeepNonLegendary}" /><TextBlock Text="Non-Legendary cards" VerticalAlignment="Center" /></DockPanel>
                     <DockPanel Margin="0,3"><TextBox DockPanel.Dock="Right" Width="90" Text="{Binding Settings.KeepLegendary}" /><TextBlock Text="Legendary cards" VerticalAlignment="Center" /></DockPanel>
@@ -405,10 +408,27 @@
 					<CheckBox Content="Golden" IsChecked="{Binding Settings.ProtectGoldenPremium}" />
 					<CheckBox Content="Signature" IsChecked="{Binding Settings.ProtectSignaturePremium}" />
 					<CheckBox Content="Diamond" IsChecked="{Binding Settings.ProtectDiamondPremium}" />
+					<TextBlock Text="Which expansions should be protected completely?" Margin="0,16,0,5"
+							   ToolTip="Every owned card from a checked expansion is hidden from Collection and dust recommendations." />
+					<Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="8" Background="#171A20">
+						<ItemsControl x:Name="ExpansionProtectionList" ItemsSource="{Binding ExpansionProtectionOptions}">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<WrapPanel />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate>
+									<CheckBox Width="235" Margin="2" Content="{Binding Name}" IsChecked="{Binding IsProtected}" />
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</Border>
                     <TextBlock Margin="0,14,0,5" TextWrapping="Wrap" Foreground="#AEB5C2"
-							   Text="Checked premium types are protected completely, appear under Protected cards, and count toward copies to keep. Unchecked premium types are not reserved and can become Rule-safe." />
+							   Text="Checked premium types and expansions are protected completely and appear under Protected cards. Checked premium types also count toward copies to keep." />
                     <Button HorizontalAlignment="Left" Content="Review and save rules" Command="{Binding SaveSettingsCommand}" />
                 </StackPanel>
+				</ScrollViewer>
             </TabItem>
         </TabControl>
 

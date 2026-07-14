@@ -97,6 +97,22 @@ public sealed class CollectionAnalyzerTests
 	}
 
 	[Fact]
+	public void ProtectedExpansionHasNoRecommendations()
+	{
+		var settings = UnprotectedSettings();
+		settings.ProtectedExpansions.Add("CATACLYSM");
+		var entry = Entry(PremiumType.Normal, 8);
+		entry.Card.Expansion = "CATACLYSM";
+
+		var result = _analyzer.Analyze(new[] { entry }, new Dictionary<int, int>(), settings).Single();
+
+		Assert.True(result.IsExpansionProtected);
+		Assert.False(result.IsSafeByRules);
+		Assert.Equal(0, result.RecommendedCopies);
+		Assert.Equal("Protected expansion", result.SafetyLabel);
+	}
+
+	[Fact]
 	public void CardInPastedDeckHasNoRecommendationsAcrossVariants()
 	{
 		var results = _analyzer.Analyze(

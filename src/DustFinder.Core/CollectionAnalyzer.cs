@@ -63,6 +63,7 @@ public sealed class CollectionAnalyzer
 			{
 				var protectedByUser = settings.ProtectedCardIds.Contains(entry.Card.CardId);
 				var protectedByPremium = settings.IsPremiumProtected(entry.Premium);
+				var protectedByExpansion = settings.IsExpansionProtected(entry.Card.Expansion);
 				var manuallyUncraftable = manualUncraftableKeys.Contains($"{entry.Card.CardId}:{(int)entry.Premium}");
 				var dust = DustValues.GetDisenchantValue(entry.Card.Rarity, entry.Premium);
 				var premiumIsDisenchantable = entry.Premium != PremiumType.Golden
@@ -73,7 +74,7 @@ public sealed class CollectionAnalyzer
 					&& premiumIsDisenchantable
 					&& dust > 0;
 				var reservedCopies = reserved.TryGetValue(entry.Premium, out var value) ? value : 0;
-				var recommended = disenchantable && !protectedByUser && !protectedByPastedDeck && !protectedByPremium
+				var recommended = disenchantable && !protectedByUser && !protectedByPastedDeck && !protectedByPremium && !protectedByExpansion
 					? Math.Max(0, entry.Count - reservedCopies)
 					: 0;
 
@@ -90,6 +91,7 @@ public sealed class CollectionAnalyzer
 					IsInPastedDeck = protectedByPastedDeck,
 					IsManuallyUncraftable = manuallyUncraftable,
 					IsPremiumProtected = protectedByPremium,
+					IsExpansionProtected = protectedByExpansion,
 					IsDisenchantable = disenchantable
 				});
 			}

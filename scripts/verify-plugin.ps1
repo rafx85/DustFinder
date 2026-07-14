@@ -70,9 +70,13 @@ try {
         }
     }
     if ($null -eq $window.FindName('MarkUncraftableButton') -or
+		$null -eq $window.FindName('CopyCardNameButton') -or
         $null -eq $window.FindName('UncraftableReportsGrid') -or
         $null -eq $window.FindName('CopyUncraftableJsonButton')) {
         throw 'The manual uncraftable reporting controls were not found.'
+    }
+    if ($null -eq $window.FindName('ExpansionProtectionList')) {
+        throw 'The Settings expansion-protection checklist was not found.'
     }
     if ($null -eq $window.FindName('CollectionCountText') -or $null -eq $window.FindName('ProtectedCountText')) {
         throw 'The filtered and total card counters were not found.'

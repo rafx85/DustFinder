@@ -18,6 +18,7 @@ public static class CardCraftabilityRules
 		"CORE",
 		"PLACEHOLDER_202204",
 		"EVENT",
+		"HERO_SKINS",
 		// VANILLA records mirror the same owned copies under their Legacy card IDs.
 		// Including both would duplicate cards and dust recommendations.
 		"VANILLA"
@@ -28,6 +29,9 @@ public static class CardCraftabilityRules
 		"OG_280", // C'Thun grant
 		"OG_281"  // Beckoner of Evil grant
 	};
+
+	public static bool IsCosmeticOnlySet(string? expansionCode) =>
+		string.Equals(expansionCode, "HERO_SKINS", StringComparison.OrdinalIgnoreCase);
 
 	public static bool IsPotentiallyCraftable(
 		bool collectible,

@@ -74,8 +74,11 @@ public sealed class MainViewModel : BindableBase
 			Settings.ProtectSignaturePremium = Settings.SignatureCountsTowardKeep;
 			Settings.ProtectDiamondPremium = Settings.DiamondCountsTowardKeep;
 		}
-		Settings.SchemaVersion = 4;
+		Settings.SchemaVersion = 5;
 		Settings.ProtectedCardIds ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+		Settings.ProtectedExpansions = new HashSet<string>(
+			Settings.ProtectedExpansions ?? new HashSet<string>(),
+			StringComparer.OrdinalIgnoreCase);
 		Settings.PastedDecks ??= new List<PastedDeckDefinition>();
 		Settings.ManualUncraftableCards ??= new List<ManualUncraftableCard>();
 		foreach(var deck in Settings.PastedDecks.Where(x => x != null))
@@ -96,6 +99,7 @@ public sealed class MainViewModel : BindableBase
 		RemovePlanCommand = new RelayCommand(RemoveSelectedPlan, () => SelectedPlanRow != null);
 		ClearPlanCommand = new RelayCommand(ClearPlan, () => PlanRows.Count > 0);
 		ProtectCommand = new RelayCommand(ProtectSelected, () => GetSelectedCards().Any(x => !x.IsProtected));
+		CopyNameCommand = new RelayCommand(CopySelectedCardName, () => SelectedCard != null);
 		ProtectPlanCommand = new RelayCommand(ProtectSelectedPlanCards, () => GetSelectedPlanRows().Any(x => !x.Card.IsProtected));
 		MarkUncraftableCommand = new RelayCommand(MarkSelectedUncraftable, () => GetSelectedCards().Count > 0);
 		RemoveUncraftableCommand = new RelayCommand(RemoveSelectedUncraftable, () => SelectedManualUncraftableCard != null);
@@ -111,6 +115,7 @@ public sealed class MainViewModel : BindableBase
 	public ObservableCollection<CardRowViewModel> ProtectedCards { get; } = new();
 	public ObservableCollection<ManualUncraftableCard> ManualUncraftableCards { get; } = new();
 	public ObservableCollection<PastedDeckDefinition> PastedDecks { get; } = new();
+	public ObservableCollection<ExpansionProtectionOption> ExpansionProtectionOptions { get; } = new();
 	public ObservableCollection<PlanRowViewModel> PlanRows { get; } = new();
 	public ObservableCollection<HistoryRowViewModel> HistoryRows { get; } = new();
 	public ICollectionView CardsView { get; }
@@ -128,7 +133,7 @@ public sealed class MainViewModel : BindableBase
 	public ObservableCollection<string> ProtectedClasses { get; } = new() { "All" };
 	public ObservableCollection<string> ProtectedFormats { get; } = new() { "All", "Standard", "Wild" };
 	public ObservableCollection<string> ProtectedPremiums { get; } = new() { "All", "Normal", "Golden", "Signature", "Diamond" };
-	public ObservableCollection<string> ProtectionReasons { get; } = new() { "All", "Protected by you", "Pasted deck", "Premium type" };
+	public ObservableCollection<string> ProtectionReasons { get; } = new() { "All", "Protected by you", "Pasted deck", "Premium type", "Expansion" };
 
 	public RelayCommand RefreshCommand { get; }
 	public RelayCommand PlanCommand { get; }
@@ -136,6 +141,7 @@ public sealed class MainViewModel : BindableBase
 	public RelayCommand RemovePlanCommand { get; }
 	public RelayCommand ClearPlanCommand { get; }
 	public RelayCommand ProtectCommand { get; }
+	public RelayCommand CopyNameCommand { get; }
 	public RelayCommand ProtectPlanCommand { get; }
 	public RelayCommand MarkUncraftableCommand { get; }
 	public RelayCommand RemoveUncraftableCommand { get; }
@@ -278,6 +284,7 @@ public sealed class MainViewModel : BindableBase
 			if(!Set(ref _selectedCard, value)) return;
 			AddSelectedCommand.RaiseCanExecuteChanged();
 			ProtectCommand.RaiseCanExecuteChanged();
+			CopyNameCommand.RaiseCanExecuteChanged();
 			MarkUncraftableCommand.RaiseCanExecuteChanged();
 		}
 	}
@@ -376,6 +383,7 @@ public sealed class MainViewModel : BindableBase
 		var maximumDeckCopies = PastedDeckUsage.MergeMaximumCopies(
 			new Dictionary<int, int>(),
 			PastedDecks);
+		RefreshExpansionProtectionOptions(_lastLoad.Entries);
 		var results = _analyzer.Analyze(_lastLoad.Entries, maximumDeckCopies, Settings, pastedDeckCards);
 		var ownedRows = results
 			.Where(x => x.Entry.Count > 0)
@@ -385,7 +393,7 @@ public sealed class MainViewModel : BindableBase
 		SelectedProtectedCard = null;
 		ProtectedCards.Clear();
 		foreach(var row in ownedRows
-			.Where(x => x.IsProtected || x.IsInPastedDeck || x.IsPremiumProtected)
+			.Where(x => x.IsProtected || x.IsInPastedDeck || x.IsPremiumProtected || x.IsExpansionProtected)
 			.GroupBy(x => x.IsPremiumProtected ? $"variant:{x.Key}" : $"card:{x.CardId}", StringComparer.OrdinalIgnoreCase)
 			.Select(x => x.First()))
 			ProtectedCards.Add(row);
@@ -395,7 +403,7 @@ public sealed class MainViewModel : BindableBase
 		SetSelectedCards(Array.Empty<CardRowViewModel>());
 		SelectedCard = null;
 		Cards.Clear();
-		foreach(var row in ownedRows.Where(x => x.Result.IsDisenchantable && !x.IsProtected && !x.IsInPastedDeck && !x.IsPremiumProtected))
+		foreach(var row in ownedRows.Where(x => x.Result.IsDisenchantable && !x.IsProtected && !x.IsInPastedDeck && !x.IsPremiumProtected && !x.IsExpansionProtected))
 			Cards.Add(row);
 		RefreshFilterOptions();
 		RefreshCardsView();
@@ -419,6 +427,33 @@ public sealed class MainViewModel : BindableBase
 		Raise(nameof(SelectedClass));
 		Raise(nameof(SelectedPlannerExpansion));
 		Raise(nameof(SelectedPlannerClass));
+	}
+
+	private void RefreshExpansionProtectionOptions(IEnumerable<CollectionEntry> entries)
+	{
+		var expansions = entries
+			.Where(x => x.Count > 0 && !string.IsNullOrWhiteSpace(x.Card.Expansion))
+			.Select(x => new
+			{
+				Key = x.Card.Expansion.Trim(),
+				Name = CardSetNames.GetDisplayName(x.Card.Expansion)
+			})
+			.GroupBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
+			.Select(x => x.First())
+			.OrderBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase)
+			.ThenBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
+			.ToList();
+
+		ExpansionProtectionOptions.Clear();
+		foreach(var expansion in expansions)
+		{
+			ExpansionProtectionOptions.Add(new ExpansionProtectionOption
+			{
+				Key = expansion.Key,
+				Name = expansion.Name,
+				IsProtected = Settings.ProtectedExpansions.Contains(expansion.Key)
+			});
+		}
 	}
 
 	private void RefreshProtectedFilterOptions()
@@ -498,6 +533,7 @@ public sealed class MainViewModel : BindableBase
 			"Protected by you" => card.IsProtected,
 			"Pasted deck" => card.IsInPastedDeck,
 			"Premium type" => card.IsPremiumProtected,
+			"Expansion" => card.IsExpansionProtected,
 			_ => true
 		};
 		if(!reasonMatches)
@@ -606,6 +642,15 @@ public sealed class MainViewModel : BindableBase
 
 	private void ProtectSelected()
 		=> ProtectCards(GetSelectedCards());
+
+	private void CopySelectedCardName()
+	{
+		var card = SelectedCard;
+		if(card == null)
+			return;
+		Clipboard.SetText(card.Name);
+		StatusMessage = $"Copied {card.Name} to the clipboard.";
+	}
 
 	private void ProtectSelectedPlanCards()
 		=> ProtectCards(GetSelectedPlanRows().Select(x => x.Card));
@@ -789,12 +834,15 @@ public sealed class MainViewModel : BindableBase
 
 	private void SaveSettings()
 	{
-		if(MessageBox.Show("Apply these copy and premium-protection rules? Checked premium types will be removed from Collection and dust recommendations.", "Change protection rules", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+		if(MessageBox.Show("Apply these copy, premium-type, and expansion-protection rules? Checked premium types and expansions will be removed from Collection and dust recommendations.", "Change protection rules", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
 			return;
 		Settings.NormalCountsTowardKeep = Settings.ProtectNormalPremium;
 		Settings.GoldenCountsTowardKeep = Settings.ProtectGoldenPremium;
 		Settings.SignatureCountsTowardKeep = Settings.ProtectSignaturePremium;
 		Settings.DiamondCountsTowardKeep = Settings.ProtectDiamondPremium;
+		Settings.ProtectedExpansions = new HashSet<string>(
+			ExpansionProtectionOptions.Where(x => x.IsProtected).Select(x => x.Key),
+			StringComparer.OrdinalIgnoreCase);
 		Settings.KeepNonLegendary = Math.Max(0, Settings.KeepNonLegendary);
 		Settings.KeepLegendary = Math.Max(0, Settings.KeepLegendary);
 		_settingsStore.Save(_settingsPath, Settings);
