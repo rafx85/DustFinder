@@ -111,6 +111,7 @@ try {
     }
     if ($null -eq $window.FindName('MarkUncraftableButton') -or
 		$null -eq $window.FindName('CopyCardNameButton') -or
+		$null -eq $window.FindName('CopyPlanCardNameButton') -or
 		$null -eq $window.FindName('PlannerCriteriaText') -or
 		$null -eq $window.FindName('FindCombinationButton') -or
         $null -eq $window.FindName('UncraftableReportsGrid') -or
@@ -155,8 +156,11 @@ try {
 		if ($mainViewModelSource -notmatch 'IsSafeByRules\s*&&\s*FilterPlannerCard' -or
 			$mainViewModelSource -notmatch 'PastedDeckUsage\.HaveSameCards' -or
 			$mainViewModelSource -notmatch 'PastedDeckUsage\.GetUniqueName' -or
-			$mainViewModelSource -notmatch 'PastedDeckUsage\.NormalizeDeckList') {
-			throw 'Planner constraints or pasted-deck content identity checks are not wired into the view model.'
+			$mainViewModelSource -notmatch 'PastedDeckUsage\.NormalizeDeckList' -or
+			$mainViewModelSource -notmatch 'last-collection\.json' -or
+			$mainViewModelSource -notmatch 'LoadCachedCollection' -or
+			$mainViewModelSource -notmatch 'SaveCollectionCache') {
+			throw 'Planner constraints, deck identity checks, or offline collection caching are not wired into the view model.'
 		}
 	}
     if ($null -eq $window.FindName('CollectionCountText') -or $null -eq $window.FindName('ProtectedCountText')) {
@@ -211,7 +215,7 @@ try {
         }
     }
     $window.Close()
-    Write-Output "Verified HDT plugin type $($type.FullName), visible version $($viewModel.PluginVersion), responsive layouts, constrained planning, content-based deck identity, and reporting controls."
+    Write-Output "Verified HDT plugin type $($type.FullName), visible version $($viewModel.PluginVersion), responsive layouts, constrained planning, offline collection caching, and copy/reporting controls."
 }
 finally {
     [AppDomain]::CurrentDomain.remove_AssemblyResolve($resolver)

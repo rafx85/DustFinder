@@ -273,6 +273,8 @@
 					</Grid>
                     <DockPanel Grid.Row="3" Margin="0,6,0,0">
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+							<Button x:Name="CopyPlanCardNameButton" Content="Copy name" Command="{Binding CopyPlanNameCommand}"
+									ToolTip="Copy the selected planned card's exact name for pasting into Hearthstone search." />
 							<Button Content="Protect selected" Command="{Binding ProtectPlanCommand}"
 									ToolTip="Select plan rows with Ctrl or Shift, then protect those cards and remove them from future combinations." />
                             <Button Content="Remove one" Command="{Binding RemovePlanCommand}" />

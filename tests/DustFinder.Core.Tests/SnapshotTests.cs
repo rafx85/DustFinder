@@ -44,6 +44,35 @@ public sealed class SnapshotTests
 		}
 	}
 
+	[Fact]
+	public void AtomicStoreRoundTripsFullCollectionForOfflineUse()
+	{
+		var directory = Path.Combine(Path.GetTempPath(), "DustFinder.Tests", Guid.NewGuid().ToString("N"));
+		Directory.CreateDirectory(directory);
+		try
+		{
+			var path = Path.Combine(directory, "last-collection.json");
+			var store = new AtomicJsonStore<CollectionSnapshot>();
+			var snapshot = Snapshot(Entry("CARD_1", 2, PremiumType.Golden));
+			snapshot.Account.BattleTag = "Offline#1234";
+			snapshot.Entries[0].Card.Expansion = "CATACLYSM";
+			snapshot.Entries[0].Card.CardClasses.Add("DRUID");
+			store.Save(path, snapshot);
+
+			Assert.True(store.TryLoad(path, out var loaded));
+			Assert.NotNull(loaded);
+			Assert.Equal("Offline#1234", loaded!.Account.BattleTag);
+			Assert.Equal(2, loaded.Entries[0].Count);
+			Assert.Equal(PremiumType.Golden, loaded.Entries[0].Premium);
+			Assert.Equal("CATACLYSM", loaded.Entries[0].Card.Expansion);
+			Assert.Contains("DRUID", loaded.Entries[0].Card.CardClasses);
+		}
+		finally
+		{
+			Directory.Delete(directory, true);
+		}
+	}
+
 	private static CollectionSnapshot Snapshot(params CollectionEntry[] entries) => new()
 	{
 		CapturedAtUtc = DateTime.UtcNow,

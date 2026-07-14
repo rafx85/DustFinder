@@ -23,9 +23,12 @@ public sealed class MainViewModel : BindableBase
 	private readonly DustPlanner _planner = new();
 	private readonly SnapshotComparer _snapshotComparer = new();
 	private readonly AtomicJsonStore<UserSettings> _settingsStore = new();
+	private readonly AtomicJsonStore<CollectionSnapshot> _collectionCacheStore = new();
 	private readonly SnapshotRepository _snapshots;
 	private readonly string _settingsPath;
+	private readonly string _collectionCachePath;
 	private CollectionLoadResult? _lastLoad;
+	private DateTime? _collectionCacheCapturedAtUtc;
 	private string _searchText = string.Empty;
 	private string _selectedExpansion = "All";
 	private string _selectedRarity = "All";
@@ -66,6 +69,7 @@ public sealed class MainViewModel : BindableBase
 			throw new ArgumentException("A data directory is required.", nameof(dataDirectory));
 		Directory.CreateDirectory(dataDirectory);
 		_settingsPath = Path.Combine(dataDirectory, "settings.json");
+		_collectionCachePath = Path.Combine(dataDirectory, "last-collection.json");
 		Settings = _settingsStore.LoadOrRecover(_settingsPath, () => new UserSettings());
 		if(Settings.SchemaVersion < 4)
 		{
@@ -111,6 +115,7 @@ public sealed class MainViewModel : BindableBase
 		ClearPlanCommand = new RelayCommand(ClearPlan, () => PlanRows.Count > 0);
 		ProtectCommand = new RelayCommand(ProtectSelected, () => GetSelectedCards().Any(x => !x.IsProtected));
 		CopyNameCommand = new RelayCommand(CopySelectedCardName, () => SelectedCard != null);
+		CopyPlanNameCommand = new RelayCommand(CopySelectedPlanCardName, () => SelectedPlanRow != null);
 		ProtectPlanCommand = new RelayCommand(ProtectSelectedPlanCards, () => GetSelectedPlanRows().Any(x => !x.Card.IsProtected));
 		MarkUncraftableCommand = new RelayCommand(MarkSelectedUncraftable, () => GetSelectedCards().Count > 0);
 		RemoveUncraftableCommand = new RelayCommand(RemoveSelectedUncraftable, () => SelectedManualUncraftableCard != null);
@@ -119,6 +124,7 @@ public sealed class MainViewModel : BindableBase
 		ImportPastedDeckCommand = new RelayCommand(ImportPastedDeck, () => !string.IsNullOrWhiteSpace(PastedDeckText));
 		RemovePastedDeckCommand = new RelayCommand(RemoveSelectedPastedDeck, () => SelectedPastedDeck != null);
 		SaveSettingsCommand = new RelayCommand(SaveSettings);
+		LoadCachedCollection();
 	}
 
 	public UserSettings Settings { get; }
@@ -154,6 +160,7 @@ public sealed class MainViewModel : BindableBase
 	public RelayCommand ClearPlanCommand { get; }
 	public RelayCommand ProtectCommand { get; }
 	public RelayCommand CopyNameCommand { get; }
+	public RelayCommand CopyPlanNameCommand { get; }
 	public RelayCommand ProtectPlanCommand { get; }
 	public RelayCommand MarkUncraftableCommand { get; }
 	public RelayCommand RemoveUncraftableCommand { get; }
@@ -336,6 +343,7 @@ public sealed class MainViewModel : BindableBase
 			if(!Set(ref _selectedPlanRow, value))
 				return;
 			RemovePlanCommand.RaiseCanExecuteChanged();
+			CopyPlanNameCommand.RaiseCanExecuteChanged();
 			ProtectPlanCommand.RaiseCanExecuteChanged();
 		}
 	}
@@ -371,20 +379,67 @@ public sealed class MainViewModel : BindableBase
 		StatusMessage = "Reading the current account collection through HDT...";
 		try
 		{
-			_lastLoad = await _source.LoadAsync();
+			var liveLoad = await _source.LoadAsync();
+			_lastLoad = liveLoad;
+			SaveCollectionCache(liveLoad);
 			Reanalyze();
 			AccountLabel = $"{_lastLoad.Account.BattleTag} · {_lastLoad.Account.Region} · {_lastLoad.Entries.Sum(x => x.Count)} owned copies";
-			UpdateHistory(_lastLoad);
+			UpdateHistory(liveLoad);
 			StatusMessage = $"Loaded {Cards.Count} unprotected disenchantable card variants. Recommendations are advisory only.";
 		}
 		catch(Exception ex)
 		{
-			StatusMessage = ex.Message;
+			StatusMessage = _lastLoad == null
+				? ex.Message
+				: $"{ex.Message} Showing the last saved collection; offline choices remain available.";
 		}
 		finally
 		{
 			IsBusy = false;
 		}
+	}
+
+	private void LoadCachedCollection()
+	{
+		if(!_collectionCacheStore.TryLoad(_collectionCachePath, out var cache)
+			|| cache == null
+			|| cache.Entries == null
+			|| cache.Entries.Count == 0)
+		{
+			return;
+		}
+
+		_lastLoad = new CollectionLoadResult
+		{
+			Account = cache.Account ?? new AccountIdentity(),
+			Entries = cache.Entries
+		};
+		_collectionCacheCapturedAtUtc = cache.CapturedAtUtc;
+		Reanalyze();
+		PopulateHistory(_lastLoad.Account);
+		AccountLabel = GetAccountLabel(_lastLoad, true);
+		StatusMessage = $"Loaded the saved collection from {cache.CapturedAtUtc.ToLocalTime():g}. Refresh will update it when HDT reads My Collection.";
+	}
+
+	private void SaveCollectionCache(CollectionLoadResult load)
+	{
+		var cache = new CollectionSnapshot
+		{
+			CapturedAtUtc = DateTime.UtcNow,
+			Account = load.Account,
+			Entries = load.Entries
+		};
+		_collectionCacheStore.Save(_collectionCachePath, cache);
+		_collectionCacheCapturedAtUtc = cache.CapturedAtUtc;
+	}
+
+	private string GetAccountLabel(CollectionLoadResult load, bool cached)
+	{
+		var accountName = string.IsNullOrWhiteSpace(load.Account.BattleTag) ? "Saved collection" : load.Account.BattleTag;
+		var label = $"{accountName} · {load.Account.Region} · {load.Entries.Sum(x => x.Count)} owned copies";
+		return cached && _collectionCacheCapturedAtUtc.HasValue
+			? $"{label} · saved {_collectionCacheCapturedAtUtc.Value.ToLocalTime():g}"
+			: label;
 	}
 
 	private void Reanalyze()
@@ -683,6 +738,15 @@ public sealed class MainViewModel : BindableBase
 		StatusMessage = $"Copied {card.Name} to the clipboard.";
 	}
 
+	private void CopySelectedPlanCardName()
+	{
+		var row = SelectedPlanRow;
+		if(row == null)
+			return;
+		Clipboard.SetText(row.Name);
+		StatusMessage = $"Copied {row.Name} to the clipboard.";
+	}
+
 	private void ProtectSelectedPlanCards()
 		=> ProtectCards(GetSelectedPlanRows().Select(x => x.Card));
 
@@ -892,7 +956,12 @@ public sealed class MainViewModel : BindableBase
 			Entries = load.Entries
 		};
 		_snapshots.SaveIfChanged(snapshot);
-		var history = _snapshots.Load(load.Account);
+		PopulateHistory(load.Account);
+	}
+
+	private void PopulateHistory(AccountIdentity account)
+	{
+		var history = _snapshots.Load(account);
 		HistoryRows.Clear();
 		if(history.Count < 2)
 			return;
