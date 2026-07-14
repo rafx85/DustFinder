@@ -90,6 +90,16 @@ public sealed class CardCraftabilityRulesTests
 			"CATA_EVENT_400"));
 	}
 
+	[Fact]
+	public void HarthStonebrewGiftIsNotCraftableEvenThoughItUsesTheLegacySet()
+	{
+		Assert.False(CardCraftabilityRules.IsPotentiallyCraftable(
+			true,
+			CardRarity.Legendary,
+			"Legacy",
+			"GIFT_01"));
+	}
+
 	[Theory]
 	[InlineData("Unlocked with \"Location, Location, Location!\" Achievement.")]
 	[InlineData("Earnable on the Murder at Castle Nathria Reward Track.")]

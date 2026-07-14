@@ -27,7 +27,8 @@ public static class CardCraftabilityRules
 	private static readonly HashSet<string> KnownNonCraftableCardIds = new(StringComparer.OrdinalIgnoreCase)
 	{
 		"OG_280", // C'Thun grant
-		"OG_281"  // Beckoner of Evil grant
+		"OG_281", // Beckoner of Evil grant
+		"GIFT_01" // Harth Stonebrew grant
 	};
 
 	public static bool IsCosmeticOnlySet(string? expansionCode) =>
