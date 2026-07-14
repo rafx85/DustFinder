@@ -21,17 +21,30 @@ jobs:
         run: |
           $hdt = .\scripts\resolve-hdt.ps1 -Version 1.53.8
           "HDT_INSTALL_DIR=$hdt" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Read plugin version
+        id: plugin_version
+        shell: powershell
+        run: |
+          [xml]$project = Get-Content .\src\DustFinder.Plugin\DustFinder.Plugin.csproj -Raw
+          $version = $project.Project.PropertyGroup |
+            ForEach-Object { $_.Version } |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+            Select-Object -First 1
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            throw 'DustFinder.Plugin.csproj does not define a Version.'
+          }
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
       - name: Build and test
         shell: powershell
-        run: .\scripts\build.ps1 -Configuration Release -HdtInstallDir $env:HDT_INSTALL_DIR
+        run: .\scripts\build.ps1 -Configuration Release -HdtInstallDir $env:HDT_INSTALL_DIR -Version '${{ steps.plugin_version.outputs.version }}'
       - name: Package
         shell: powershell
-        run: .\scripts\package.ps1 -Version 0.1.0 -HdtInstallDir $env:HDT_INSTALL_DIR -NoBuild
+        run: .\scripts\package.ps1 -Version '${{ steps.plugin_version.outputs.version }}' -HdtInstallDir $env:HDT_INSTALL_DIR -NoBuild
       - name: Verify plugin contract
         shell: powershell
         run: powershell.exe -NoProfile -Sta -ExecutionPolicy Bypass -File .\scripts\verify-plugin.ps1 -HdtInstallDir $env:HDT_INSTALL_DIR
       - uses: actions/upload-artifact@v4
         with:
-          name: DustFinder-0.1.0
-          path: dist/DustFinder-0.1.0.zip
+          name: DustFinder-${{ steps.plugin_version.outputs.version }}
+          path: dist/DustFinder-${{ steps.plugin_version.outputs.version }}.zip
           if-no-files-found: error
