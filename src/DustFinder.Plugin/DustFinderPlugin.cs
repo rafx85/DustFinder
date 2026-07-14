@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using DustFinder.Plugin.Integration;
@@ -28,7 +27,7 @@ public sealed class DustFinderPlugin : IPlugin
 	public string Description => "Recommendation-only Hearthstone collection and dust planner.";
 	public string ButtonText => "Open DustFinder";
 	public string Author => "Rafx";
-	public Version Version => Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 1, 0);
+	public Version Version => PluginVersionInfo.Current;
 	public MenuItem MenuItem => _menuItem;
 
 	public void OnLoad()

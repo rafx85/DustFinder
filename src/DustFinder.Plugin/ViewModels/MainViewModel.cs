@@ -113,6 +113,7 @@ public sealed class MainViewModel : BindableBase
 	}
 
 	public UserSettings Settings { get; }
+	public string PluginVersion => PluginVersionInfo.Display;
 	public ObservableCollection<CardRowViewModel> Cards { get; } = new();
 	public ObservableCollection<CardRowViewModel> ProtectedCards { get; } = new();
 	public ObservableCollection<ManualUncraftableCard> ManualUncraftableCards { get; } = new();

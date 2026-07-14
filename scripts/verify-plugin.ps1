@@ -34,10 +34,37 @@ try {
     $source = [Activator]::CreateInstance($sourceType)
     $viewModel = [Activator]::CreateInstance($viewModelType, @($source, $plugin))
     $window = [Activator]::CreateInstance($windowType, @($viewModel))
-    $collectionGrid = $window.FindName('CollectionGrid')
-    if ($null -eq $collectionGrid -or $collectionGrid.SelectionMode.ToString() -ne 'Extended') {
-        throw 'The collection grid is not configured for Ctrl/Shift multi-selection.'
+    $versionText = $window.FindName('PluginVersionText')
+    $expectedVersionText = "v$($instance.Version.Major).$($instance.Version.Minor).$($instance.Version.Build)"
+    if ($null -eq $versionText) {
+        throw 'The visible plugin version label was not found.'
     }
+    if ($viewModel.PluginVersion -ne $expectedVersionText -or $versionText.Text -ne $expectedVersionText) {
+        throw "The visible plugin version does not match the installed assembly version: expected $expectedVersionText, view model $($viewModel.PluginVersion), label $($versionText.Text)."
+    }
+    $collectionGrid = $window.FindName('CollectionGrid')
+    if ($null -eq $collectionGrid -or
+		$collectionGrid.SelectionMode.ToString() -ne 'Extended' -or
+		$collectionGrid.FrozenColumnCount -ne 1) {
+        throw "The collection grid is not configured for responsive multi-selection: mode $($collectionGrid.SelectionMode), frozen columns $($collectionGrid.FrozenColumnCount)."
+    }
+	$applyResponsiveLayout = $windowType.GetMethod('ApplyResponsiveLayout', [Reflection.BindingFlags]'Instance,NonPublic')
+	if ($null -eq $applyResponsiveLayout) {
+		throw 'The responsive table layout was not found.'
+	}
+	$window.Width = 1200
+	[void]$applyResponsiveLayout.Invoke($window, @())
+	$collectionTypeColumn = $collectionGrid.Columns | Where-Object { $_.Header -eq 'Type' } | Select-Object -First 1
+	if ($window.FindName('CollectionCardPreview').Visibility.ToString() -ne 'Collapsed' -or
+		$collectionTypeColumn.Visibility.ToString() -ne 'Collapsed') {
+		throw 'The compact layout does not release space for the primary card columns.'
+	}
+	$window.Width = 1800
+	[void]$applyResponsiveLayout.Invoke($window, @())
+	if ($window.FindName('CollectionCardPreview').Visibility.ToString() -ne 'Visible' -or
+		$collectionTypeColumn.Visibility.ToString() -ne 'Visible') {
+		throw 'The wide layout does not restore the card preview and detail columns.'
+	}
     if ($collectionGrid.Columns[1].Width.UnitType.ToString() -ne 'SizeToCells') {
         throw 'The expansion column is not configured to size itself to expansion names.'
     }
@@ -114,7 +141,9 @@ try {
     }
     $planGrid = $window.FindName('PlanGrid')
     $requiredPlanColumns = @('Name', 'Expansion', 'Rarity', 'Class', 'Type', 'Premium', 'Owned', 'Deck max', 'Keep', 'Extra', 'Dust ea.', 'Potential', 'Assessment', 'Plan copies', 'Plan dust')
-    if ($null -eq $planGrid -or $planGrid.SelectionMode.ToString() -ne 'Extended') {
+    if ($null -eq $planGrid -or
+		$planGrid.SelectionMode.ToString() -ne 'Extended' -or
+		$planGrid.FrozenColumnCount -ne 1) {
         throw 'The dust-plan grid is not configured for Ctrl/Shift multi-selection.'
     }
     foreach ($header in $requiredPlanColumns) {
@@ -134,11 +163,14 @@ try {
 	$protectedRarityColumn = $protectedGrid.Columns | Where-Object { $_.Header -eq 'Rarity' } | Select-Object -First 1
     if ($null -eq $protectedGrid -or
 		$null -eq $protectedRarityColumn -or
-        $protectedNameColumn.Width.Value -gt 500 -or
-        $protectedClassColumn.Width.Value -lt 400 -or
+		$protectedGrid.FrozenColumnCount -ne 1 -or
+		$protectedNameColumn.Width.UnitType.ToString() -ne 'Star' -or
+		$protectedNameColumn.MinWidth -lt 200 -or
+        $protectedClassColumn.Width.Value -gt 180 -or
 		$protectedReasonColumn.Width.UnitType.ToString() -ne 'Star' -or
+		$protectedReasonColumn.MinWidth -lt 180 -or
 		$protectedPremiumColumn.SortMemberPath -ne 'PremiumSortOrder') {
-        throw 'The protected-card columns are not balanced for class and reason text.'
+        throw 'The protected-card columns are not configured for responsive sizing.'
     }
     foreach ($filterName in @(
         'ProtectedExpansionFilter',
@@ -153,7 +185,7 @@ try {
         }
     }
     $window.Close()
-    Write-Output "Verified HDT plugin type $($type.FullName), version $($instance.Version), Collection and planner filters, extended selection, protected rarity, and manual uncraftable reporting controls."
+    Write-Output "Verified HDT plugin type $($type.FullName), visible version $($viewModel.PluginVersion), responsive table layouts, filters, extended selection, protected rarity, and manual uncraftable reporting controls."
 }
 finally {
     [AppDomain]::CurrentDomain.remove_AssemblyResolve($resolver)

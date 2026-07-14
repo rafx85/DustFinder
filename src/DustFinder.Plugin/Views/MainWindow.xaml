@@ -84,10 +84,14 @@
             <DockPanel>
                 <Button DockPanel.Dock="Right" Content="Refresh collection" Command="{Binding RefreshCommand}"
                         ToolTip="Asks HDT to read the collection for the Hearthstone account that is currently signed in." />
-                <StackPanel>
-                    <TextBlock Text="DustFinder" FontSize="24" FontWeight="SemiBold" />
-                    <TextBlock Text="{Binding AccountLabel}" Foreground="#AEB5C2" Margin="0,3,0,0" />
-                </StackPanel>
+				<StackPanel>
+					<StackPanel Orientation="Horizontal">
+						<TextBlock Text="DustFinder" FontSize="24" FontWeight="SemiBold" />
+						<TextBlock x:Name="PluginVersionText" FontSize="13"
+								   Foreground="#AEB5C2" Margin="8,0,0,3" VerticalAlignment="Bottom" />
+					</StackPanel>
+					<TextBlock Text="{Binding AccountLabel}" Foreground="#AEB5C2" Margin="0,3,0,0" />
+				</StackPanel>
             </DockPanel>
         </Border>
 
@@ -136,13 +140,14 @@
                     <DataGrid x:Name="CollectionGrid" Grid.Column="0" ItemsSource="{Binding CardsView}"
                               SelectedItem="{Binding SelectedCard}" AlternationCount="2"
                               SelectionMode="Extended" SelectionUnit="FullRow"
+							  HorizontalScrollBarVisibility="Auto"
 							  SelectionChanged="CollectionGrid_OnSelectionChanged"
 							  Sorting="DataGrid_OnSorting">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" />
-                            <DataGridTextColumn Header="Expansion" Binding="{Binding Expansion}" Width="SizeToCells" MinWidth="140" MaxWidth="260" />
+                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" MinWidth="200" />
+                            <DataGridTextColumn Header="Expansion" Binding="{Binding Expansion}" Width="SizeToCells" MinWidth="140" MaxWidth="220" />
                             <DataGridTextColumn Header="Rarity" Binding="{Binding Rarity}" Width="85" />
-                            <DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="220" />
+                            <DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="150" />
                             <DataGridTextColumn Header="Type" Binding="{Binding CardType}" Width="95" />
 							<DataGridTextColumn Header="Premium" Binding="{Binding Premium}" SortMemberPath="PremiumSortOrder" Width="90" />
 							<DataGridTextColumn Header="Owned" Binding="{Binding Owned}" Width="65" />
@@ -151,7 +156,7 @@
                             <DataGridTextColumn Header="Extra" Binding="{Binding Extra}" Width="55" />
                             <DataGridTextColumn Header="Dust ea." Binding="{Binding DustEach}" Width="70" />
                             <DataGridTextColumn Header="Potential" Binding="{Binding PotentialDust}" Width="75" />
-                            <DataGridTextColumn Header="Assessment" Binding="{Binding Safety}" Width="190" />
+                            <DataGridTextColumn Header="Assessment" Binding="{Binding Safety}" Width="175" />
                         </DataGrid.Columns>
                     </DataGrid>
 						<Border x:Name="CollectionCardPreview" Grid.Column="1" Width="245" Margin="8,0,0,0"
@@ -236,12 +241,13 @@
 						</Grid.ColumnDefinitions>
                     <DataGrid x:Name="PlanGrid" Grid.Column="0" ItemsSource="{Binding PlanRowsView}" SelectedItem="{Binding SelectedPlanRow}"
 							  AlternationCount="2" SelectionMode="Extended" SelectionUnit="FullRow"
+							  HorizontalScrollBarVisibility="Auto"
 							  SelectionChanged="PlanGrid_OnSelectionChanged" Sorting="DataGrid_OnSorting">
                         <DataGrid.Columns>
-							<DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" />
-							<DataGridTextColumn Header="Expansion" Binding="{Binding Expansion}" Width="SizeToCells" MinWidth="140" MaxWidth="260" />
+							<DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" MinWidth="200" />
+							<DataGridTextColumn Header="Expansion" Binding="{Binding Expansion}" Width="SizeToCells" MinWidth="140" MaxWidth="220" />
 							<DataGridTextColumn Header="Rarity" Binding="{Binding Rarity}" Width="85" />
-							<DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="220" />
+							<DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="150" />
 							<DataGridTextColumn Header="Type" Binding="{Binding CardType}" Width="95" />
 							<DataGridTextColumn Header="Premium" Binding="{Binding Premium}" SortMemberPath="PremiumSortOrder" Width="90" />
 							<DataGridTextColumn Header="Owned" Binding="{Binding Owned}" Width="65" />
@@ -250,7 +256,7 @@
 							<DataGridTextColumn Header="Extra" Binding="{Binding Extra}" Width="55" />
 							<DataGridTextColumn Header="Dust ea." Binding="{Binding DustEach}" Width="70" />
 							<DataGridTextColumn Header="Potential" Binding="{Binding PotentialDust}" Width="75" />
-							<DataGridTextColumn Header="Assessment" Binding="{Binding Safety}" Width="190" />
+							<DataGridTextColumn Header="Assessment" Binding="{Binding Safety}" Width="175" />
 							<DataGridTextColumn Header="Plan copies" Binding="{Binding Copies}" Width="85" />
 							<DataGridTextColumn Header="Plan dust" Binding="{Binding Total}" Width="80" />
                         </DataGrid.Columns>
@@ -359,14 +365,15 @@
 							<ColumnDefinition Width="Auto" />
 						</Grid.ColumnDefinitions>
 					<DataGrid x:Name="ProtectedGrid" Grid.Column="0" ItemsSource="{Binding ProtectedCardsView}" SelectedItem="{Binding SelectedProtectedCard}"
-							  AlternationCount="2" Sorting="DataGrid_OnSorting">
+							  AlternationCount="2" HorizontalScrollBarVisibility="Auto"
+							  Sorting="DataGrid_OnSorting">
                         <DataGrid.Columns>
-							<DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="480" />
-							<DataGridTextColumn Header="Expansion" Binding="{Binding Expansion}" Width="220" />
-							<DataGridTextColumn Header="Rarity" Binding="{Binding Rarity}" Width="95" />
-							<DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="420" />
-							<DataGridTextColumn Header="Premium" Binding="{Binding Premium}" SortMemberPath="PremiumSortOrder" Width="110" />
-							<DataGridTextColumn Header="Reason" Binding="{Binding ProtectionReason}" Width="*" MinWidth="300" />
+							<DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" MinWidth="220" />
+							<DataGridTextColumn Header="Expansion" Binding="{Binding Expansion}" Width="SizeToCells" MinWidth="140" MaxWidth="220" />
+							<DataGridTextColumn Header="Rarity" Binding="{Binding Rarity}" Width="85" />
+							<DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="150" />
+							<DataGridTextColumn Header="Premium" Binding="{Binding Premium}" SortMemberPath="PremiumSortOrder" Width="90" />
+							<DataGridTextColumn Header="Reason" Binding="{Binding ProtectionReason}" Width="2*" MinWidth="180" />
                         </DataGrid.Columns>
                     </DataGrid>
 						<Border x:Name="ProtectedCardPreview" Grid.Column="1" Width="245" Margin="8,0,0,0"

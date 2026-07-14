@@ -48,10 +48,10 @@ dotnet test .\tests\DustFinder.Core.Tests\DustFinder.Core.Tests.csproj
 ## Create a release ZIP
 
 ```powershell
-.\scripts\package.ps1 -Version 0.1.0
+.\scripts\package.ps1 -Version 0.1.1
 ```
 
-The result is `dist\DustFinder-0.1.0.zip` with this HDT-compatible layout:
+The version is stamped into the plugin DLL and shown beside the DustFinder name in the plugin window. The result is `dist\DustFinder-0.1.1.zip` with this HDT-compatible layout:
 
 ```text
 DustFinder/
@@ -64,7 +64,7 @@ No HDT, HearthMirror, HearthDb, MahApps, or Newtonsoft binaries are bundled.
 ## Install in HDT
 
 1. In HDT, open `Options > Tracker > Plugins`.
-2. Drag `DustFinder-0.1.0.zip` into the plugin list, or extract its `DustFinder` folder under `%APPDATA%\HearthstoneDeckTracker\Plugins`.
+2. Drag `DustFinder-0.1.1.zip` into the plugin list, or extract its `DustFinder` folder under `%APPDATA%\HearthstoneDeckTracker\Plugins`.
 3. Restart HDT if requested and enable DustFinder.
 4. Click `Open DustFinder` or use the `Plugins > DustFinder` menu.
 5. Start Hearthstone, sign in, open My Collection, and click `Refresh collection`.

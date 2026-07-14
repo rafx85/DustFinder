@@ -12,25 +12,57 @@ namespace DustFinder.Plugin.Views;
 
 public partial class MainWindow : Window
 {
+	private const double CompactLayoutWidth = 1400;
+	private const double PreviewLayoutWidth = 1650;
 	private readonly INotifyCollectionChanged? _cardsViewChanges;
 
 	public MainWindow(MainViewModel viewModel)
 	{
 		InitializeComponent();
 		DataContext = viewModel;
+		PluginVersionText.Text = viewModel.PluginVersion;
+		CollectionGrid.FrozenColumnCount = 1;
+		PlanGrid.FrozenColumnCount = 1;
+		ProtectedGrid.FrozenColumnCount = 1;
 		_cardsViewChanges = viewModel.CardsView as INotifyCollectionChanged;
 		if(_cardsViewChanges != null)
 			_cardsViewChanges.CollectionChanged += CardsView_OnCollectionChanged;
 		Loaded += async (_, _) =>
 		{
+			ApplyResponsiveLayout();
 			await viewModel.RefreshAsync();
 			EnsureFilterDefaults();
 		};
+		SizeChanged += (_, _) => ApplyResponsiveLayout();
 		Closed += (_, _) =>
 		{
 			if(_cardsViewChanges != null)
 				_cardsViewChanges.CollectionChanged -= CardsView_OnCollectionChanged;
 		};
+	}
+
+	private void ApplyResponsiveLayout()
+	{
+		var availableWidth = ActualWidth > 0 ? ActualWidth : Width;
+		var compact = availableWidth < CompactLayoutWidth;
+		var showPreviews = availableWidth >= PreviewLayoutWidth;
+		var previewVisibility = showPreviews ? Visibility.Visible : Visibility.Collapsed;
+		CollectionCardPreview.Visibility = previewVisibility;
+		PlanCardPreview.Visibility = previewVisibility;
+		ProtectedCardPreview.Visibility = previewVisibility;
+
+		SetColumnVisibility(CollectionGrid, !compact, "Type", "Owned", "Deck max", "Keep", "Dust ea.");
+		SetColumnVisibility(PlanGrid, !compact, "Type", "Owned", "Deck max", "Keep", "Dust ea.", "Assessment");
+	}
+
+	private static void SetColumnVisibility(DataGrid grid, bool visible, params string[] headers)
+	{
+		var visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+		foreach(var column in grid.Columns.Where(column =>
+			headers.Contains(column.Header as string, StringComparer.Ordinal)))
+		{
+			column.Visibility = visibility;
+		}
 	}
 
 	private void CardsView_OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
