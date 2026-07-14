@@ -580,6 +580,14 @@ public sealed class MainViewModel : BindableBase
 		var eligibleCards = Cards
 			.Where(x => x.IsSafeByRules && FilterPlannerCard(x))
 			.ToDictionary(x => x.Key, StringComparer.OrdinalIgnoreCase);
+		if(eligibleCards.Count == 0)
+		{
+			PlanRows.Clear();
+			RefreshPlanRowsView();
+			UpdatePlanTotals();
+			StatusMessage = "No dust-eligible extra cards match the selected planner criteria.";
+			return;
+		}
 		var candidates = eligibleCards.Values.Select(x => new PlanCandidate
 		{
 			Key = x.Key,
@@ -809,11 +817,13 @@ public sealed class MainViewModel : BindableBase
 		try
 		{
 			var deck = PastedDeckImporter.Import(PastedDeckText, PastedDecks.Count + 1);
-			if(PastedDecks.Any(x => string.Equals(x.DeckCode, deck.DeckCode, StringComparison.Ordinal)))
+			var existingDeck = PastedDecks.FirstOrDefault(x => PastedDeckUsage.HaveSameCards(x, deck));
+			if(existingDeck != null)
 			{
-				StatusMessage = $"{deck.Name} is already in your pasted decks.";
+				StatusMessage = $"A deck with exactly these cards is already added as {existingDeck.Name}.";
 				return;
 			}
+			deck.Name = PastedDeckUsage.GetUniqueName(deck.Name, PastedDecks);
 			PastedDecks.Add(deck);
 			SavePastedDecks();
 			PastedDeckText = string.Empty;

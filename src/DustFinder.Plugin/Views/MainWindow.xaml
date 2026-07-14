@@ -196,14 +196,15 @@
                     <WrapPanel Grid.Row="0" VerticalAlignment="Center">
                         <TextBlock Text="Target dust" VerticalAlignment="Center" Margin="3" />
                         <TextBox Width="100" Text="{Binding TargetDust, UpdateSourceTrigger=PropertyChanged}" />
-                        <Button Content="Find combination" Command="{Binding PlanCommand}"
-                                ToolTip="Uses bounded optimization to prefer an exact total, then the smallest possible overshoot." />
                         <TextBlock Text="Selected:" VerticalAlignment="Center" Margin="20,0,4,0" />
                         <TextBlock Text="{Binding PlannedDust}" FontWeight="Bold" VerticalAlignment="Center" />
                         <TextBlock Text="Remaining:" VerticalAlignment="Center" Margin="20,0,4,0" />
                         <TextBlock Text="{Binding RemainingDust}" FontWeight="Bold" VerticalAlignment="Center" />
                     </WrapPanel>
-					<WrapPanel Grid.Row="1" Margin="0,6,0,6">
+					<StackPanel Grid.Row="1" Margin="0,6,0,6">
+						<TextBlock x:Name="PlannerCriteriaText" Text="Use only dust-eligible cards matching these criteria"
+								   Foreground="#AEB5C2" Margin="4,0,0,2" />
+					<WrapPanel>
 						<StackPanel>
 							<TextBlock Text="Search" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
 							<TextBox Width="235" Text="{Binding PlannerSearchText, UpdateSourceTrigger=PropertyChanged}" />
@@ -233,7 +234,11 @@
 							<ComboBox x:Name="PlannerPremiumFilter" Width="120" ItemsSource="{Binding Premiums}"
 									  SelectedItem="{Binding SelectedPlannerPremium, Mode=TwoWay}" SelectedIndex="0" />
 						</StackPanel>
+						<Button x:Name="FindCombinationButton" Content="Find combination" Command="{Binding PlanCommand}"
+								VerticalAlignment="Bottom" Margin="8,3,3,3"
+								ToolTip="Applies the selected search, expansion, rarity, class, format, and premium criteria before finding the closest dust combination." />
 					</WrapPanel>
+					</StackPanel>
 					<Grid Grid.Row="2">
 						<Grid.ColumnDefinitions>
 							<ColumnDefinition Width="*" />

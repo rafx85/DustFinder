@@ -5,7 +5,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <AssemblyName>DustFinder.Plugin</AssemblyName>
     <RootNamespace>DustFinder.Plugin</RootNamespace>
-    <Version>0.1.3</Version>
+    <Version>0.1.4</Version>
     <HdtInstallDir Condition="'$(HdtInstallDir)' == ''">$(HDT_INSTALL_DIR)</HdtInstallDir>
   </PropertyGroup>
   <Target Name="ValidateHdtInstallDir" BeforeTargets="ResolveReferences">

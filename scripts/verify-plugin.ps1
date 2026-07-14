@@ -111,6 +111,8 @@ try {
     }
     if ($null -eq $window.FindName('MarkUncraftableButton') -or
 		$null -eq $window.FindName('CopyCardNameButton') -or
+		$null -eq $window.FindName('PlannerCriteriaText') -or
+		$null -eq $window.FindName('FindCombinationButton') -or
         $null -eq $window.FindName('UncraftableReportsGrid') -or
         $null -eq $window.FindName('CopyUncraftableJsonButton')) {
         throw 'The manual uncraftable reporting controls were not found.'
@@ -132,6 +134,7 @@ try {
 	}
 	$previewXamlPath = Join-Path $PSScriptRoot '..\src\DustFinder.Plugin\Views\MainWindow.xaml'
 	$previewAdapterPath = Join-Path $PSScriptRoot '..\src\DustFinder.Plugin\Controls\BindableCardImage.cs'
+	$mainViewModelPath = Join-Path $PSScriptRoot '..\src\DustFinder.Plugin\ViewModels\MainViewModel.cs'
 	if (Test-Path -LiteralPath $previewXamlPath) {
 		$previewXaml = Get-Content -LiteralPath $previewXamlPath -Raw
 		if ($previewXaml -notmatch 'BindableCardImage\s+BoundCardId="\{Binding CardId\}"' -or
@@ -145,6 +148,14 @@ try {
 			$previewAdapter -notmatch 'SetCardIdFromCard' -or
 			$previewAdapter -notmatch 'ShowQuestionmark\s*=\s*false') {
 			throw 'The card preview adapter is not resolving HDT cached art without the question-mark overlay.'
+		}
+	}
+	if (Test-Path -LiteralPath $mainViewModelPath) {
+		$mainViewModelSource = Get-Content -LiteralPath $mainViewModelPath -Raw
+		if ($mainViewModelSource -notmatch 'IsSafeByRules\s*&&\s*FilterPlannerCard' -or
+			$mainViewModelSource -notmatch 'PastedDeckUsage\.HaveSameCards' -or
+			$mainViewModelSource -notmatch 'PastedDeckUsage\.GetUniqueName') {
+			throw 'Planner constraints or pasted-deck content identity checks are not wired into the view model.'
 		}
 	}
     if ($null -eq $window.FindName('CollectionCountText') -or $null -eq $window.FindName('ProtectedCountText')) {
@@ -199,7 +210,7 @@ try {
         }
     }
     $window.Close()
-    Write-Output "Verified HDT plugin type $($type.FullName), visible version $($viewModel.PluginVersion), responsive table layouts, filters, extended selection, protected rarity, and manual uncraftable reporting controls."
+    Write-Output "Verified HDT plugin type $($type.FullName), visible version $($viewModel.PluginVersion), responsive layouts, constrained planning, content-based deck identity, and reporting controls."
 }
 finally {
     [AppDomain]::CurrentDomain.remove_AssemblyResolve($resolver)

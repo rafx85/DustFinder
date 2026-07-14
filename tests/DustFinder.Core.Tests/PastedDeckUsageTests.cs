@@ -7,6 +7,42 @@ namespace DustFinder.Core.Tests;
 public sealed class PastedDeckUsageTests
 {
 	[Fact]
+	public void SameCardsIgnoreDeckNameCodeHeroAndInsertionOrder()
+	{
+		var first = Deck((10, 2), (20, 1));
+		first.Name = "Deck one";
+		first.DeckCode = "first";
+		first.HeroDbfId = 7;
+		var second = Deck((20, 1), (10, 2));
+		second.Name = "Completely different name";
+		second.DeckCode = "second";
+		second.HeroDbfId = 99;
+
+		Assert.True(PastedDeckUsage.HaveSameCards(first, second));
+	}
+
+	[Fact]
+	public void DifferentCopyCountsAreNotTheSameDeck()
+	{
+		Assert.False(PastedDeckUsage.HaveSameCards(
+			Deck((10, 2), (20, 1)),
+			Deck((10, 1), (20, 1))));
+	}
+
+	[Fact]
+	public void SameNameGetsNextAvailableNumber()
+	{
+		var decks = new[]
+		{
+			new PastedDeckDefinition { Name = "Herald Warrior" },
+			new PastedDeckDefinition { Name = "Herald Warrior (2)" }
+		};
+
+		Assert.Equal("Herald Warrior (3)", PastedDeckUsage.GetUniqueName("Herald Warrior", decks));
+		Assert.Equal("Different deck", PastedDeckUsage.GetUniqueName("Different deck", decks));
+	}
+
+	[Fact]
 	public void MergeMaximumCopiesUsesHighestRequirementAcrossHdtAndPastedDecks()
 	{
 		var hdt = new Dictionary<int, int> { [10] = 1, [20] = 2 };
