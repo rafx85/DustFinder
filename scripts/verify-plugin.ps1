@@ -55,9 +55,14 @@ try {
 	$window.Width = 1200
 	[void]$applyResponsiveLayout.Invoke($window, @())
 	$collectionTypeColumn = $collectionGrid.Columns | Where-Object { $_.Header -eq 'Type' } | Select-Object -First 1
-	if ($window.FindName('CollectionCardPreview').Visibility.ToString() -ne 'Collapsed' -or
+	if ($window.FindName('CollectionCardPreview').Visibility.ToString() -ne 'Visible' -or
 		$collectionTypeColumn.Visibility.ToString() -ne 'Collapsed') {
-		throw 'The compact layout does not release space for the primary card columns.'
+		throw 'The normal-window layout does not preserve the preview while releasing space for primary card columns.'
+	}
+	$window.Width = 950
+	[void]$applyResponsiveLayout.Invoke($window, @())
+	if ($window.FindName('CollectionCardPreview').Visibility.ToString() -ne 'Collapsed') {
+		throw 'The narrow-window layout does not release the card-preview space.'
 	}
 	$window.Width = 1800
 	[void]$applyResponsiveLayout.Invoke($window, @())
@@ -129,8 +134,9 @@ try {
 	if (Test-Path -LiteralPath $previewAdapterPath) {
 		$previewAdapter = Get-Content -LiteralPath $previewAdapterPath -Raw
 		if ($previewAdapter -notmatch 'Cards\.All\.TryGetValue' -or
-			$previewAdapter -notmatch 'SetCardIdFromCard') {
-			throw 'The card preview adapter is not resolving HearthDb cards through HDT cached-asset loading.'
+			$previewAdapter -notmatch 'SetCardIdFromCard' -or
+			$previewAdapter -notmatch 'ShowQuestionmark\s*=\s*false') {
+			throw 'The card preview adapter is not resolving HDT cached art without the question-mark overlay.'
 		}
 	}
     if ($null -eq $window.FindName('CollectionCountText') -or $null -eq $window.FindName('ProtectedCountText')) {

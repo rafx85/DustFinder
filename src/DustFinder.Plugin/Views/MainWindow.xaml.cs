@@ -13,7 +13,7 @@ namespace DustFinder.Plugin.Views;
 public partial class MainWindow : Window
 {
 	private const double CompactLayoutWidth = 1400;
-	private const double PreviewLayoutWidth = 1650;
+	private const double PreviewLayoutWidth = 1000;
 	private readonly INotifyCollectionChanged? _cardsViewChanges;
 
 	public MainWindow(MainViewModel viewModel)

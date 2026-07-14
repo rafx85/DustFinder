@@ -24,7 +24,7 @@ public sealed class BindableCardImage : ContentControl
 	{
 		_cardImage = new CardImage
 		{
-			ShowQuestionmark = true,
+			ShowQuestionmark = false,
 			HorizontalAlignment = HorizontalAlignment.Stretch,
 			VerticalAlignment = VerticalAlignment.Stretch
 		};
