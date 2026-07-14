@@ -83,8 +83,17 @@ public sealed class MainViewModel : BindableBase
 			StringComparer.OrdinalIgnoreCase);
 		Settings.PastedDecks ??= new List<PastedDeckDefinition>();
 		Settings.ManualUncraftableCards ??= new List<ManualUncraftableCard>();
-		foreach(var deck in Settings.PastedDecks.Where(x => x != null))
+		var savedPastedDecks = Settings.PastedDecks.Where(x => x != null).ToList();
+		var savedDeckNames = savedPastedDecks.Select(x => x.Name).ToList();
+		var normalizedPastedDecks = PastedDeckUsage.NormalizeDeckList(savedPastedDecks);
+		var pastedDecksChanged = savedPastedDecks.Count != normalizedPastedDecks.Count
+			|| !savedPastedDecks.SequenceEqual(normalizedPastedDecks)
+			|| !savedDeckNames.SequenceEqual(savedPastedDecks.Select(x => x.Name), StringComparer.Ordinal);
+		Settings.PastedDecks = normalizedPastedDecks;
+		foreach(var deck in normalizedPastedDecks)
 			PastedDecks.Add(deck);
+		if(pastedDecksChanged)
+			_settingsStore.Save(_settingsPath, Settings);
 		foreach(var card in Settings.ManualUncraftableCards.Where(x => x != null))
 			ManualUncraftableCards.Add(card);
 		_snapshots = new SnapshotRepository(Path.Combine(dataDirectory, "snapshots"));

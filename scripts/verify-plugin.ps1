@@ -154,7 +154,8 @@ try {
 		$mainViewModelSource = Get-Content -LiteralPath $mainViewModelPath -Raw
 		if ($mainViewModelSource -notmatch 'IsSafeByRules\s*&&\s*FilterPlannerCard' -or
 			$mainViewModelSource -notmatch 'PastedDeckUsage\.HaveSameCards' -or
-			$mainViewModelSource -notmatch 'PastedDeckUsage\.GetUniqueName') {
+			$mainViewModelSource -notmatch 'PastedDeckUsage\.GetUniqueName' -or
+			$mainViewModelSource -notmatch 'PastedDeckUsage\.NormalizeDeckList') {
 			throw 'Planner constraints or pasted-deck content identity checks are not wired into the view model.'
 		}
 	}

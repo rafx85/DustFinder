@@ -43,6 +43,25 @@ public sealed class PastedDeckUsageTests
 	}
 
 	[Fact]
+	public void NormalizeRemovesExactLegacyDuplicatesAndNumbersDifferentDecksWithSameName()
+	{
+		var original = Deck((10, 2), (20, 1));
+		original.Name = "Herald Warrior";
+		var duplicate = Deck((20, 1), (10, 2));
+		duplicate.Name = "Old duplicate name";
+		var different = Deck((10, 2), (30, 1));
+		different.Name = "Herald Warrior";
+
+		var normalized = PastedDeckUsage.NormalizeDeckList(new[] { original, duplicate, different });
+
+		Assert.Equal(2, normalized.Count);
+		Assert.Same(original, normalized[0]);
+		Assert.Same(different, normalized[1]);
+		Assert.Equal("Herald Warrior", normalized[0].Name);
+		Assert.Equal("Herald Warrior (2)", normalized[1].Name);
+	}
+
+	[Fact]
 	public void MergeMaximumCopiesUsesHighestRequirementAcrossHdtAndPastedDecks()
 	{
 		var hdt = new Dictionary<int, int> { [10] = 1, [20] = 2 };

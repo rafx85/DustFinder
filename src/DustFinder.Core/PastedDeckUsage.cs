@@ -37,6 +37,22 @@ public static class PastedDeckUsage
 		}
 	}
 
+	public static List<PastedDeckDefinition> NormalizeDeckList(IEnumerable<PastedDeckDefinition> decks)
+	{
+		if(decks == null)
+			throw new ArgumentNullException(nameof(decks));
+
+		var normalized = new List<PastedDeckDefinition>();
+		foreach(var deck in decks.Where(x => x != null))
+		{
+			if(normalized.Any(existing => HaveSameCards(existing, deck)))
+				continue;
+			deck.Name = GetUniqueName(deck.Name, normalized);
+			normalized.Add(deck);
+		}
+		return normalized;
+	}
+
 	public static HashSet<int> GetProtectedCardDbfIds(IEnumerable<PastedDeckDefinition> decks) =>
 		new(decks
 			.Where(x => x?.CardDbfIds != null)
