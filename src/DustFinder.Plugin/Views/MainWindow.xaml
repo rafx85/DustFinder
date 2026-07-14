@@ -89,27 +89,48 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <WrapPanel Grid.Row="0" Margin="0,0,0,6">
-                        <TextBox Width="235" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="Searches card name, expansion, mechanic, tribe, type, class, card ID, and card text." />
-                        <ComboBox Width="145" ItemsSource="{Binding Expansions}" SelectedItem="{Binding SelectedExpansion}" ToolTip="Expansion" />
-                        <ComboBox Width="115" ItemsSource="{Binding Rarities}" SelectedItem="{Binding SelectedRarity}" ToolTip="Rarity" />
-                        <ComboBox Width="135" ItemsSource="{Binding Classes}" SelectedItem="{Binding SelectedClass}" ToolTip="Class" />
-                        <ComboBox Width="115" ItemsSource="{Binding Formats}" SelectedItem="{Binding SelectedFormat}" ToolTip="Format" />
-                        <ComboBox Width="120" ItemsSource="{Binding Premiums}" SelectedItem="{Binding SelectedPremium}" ToolTip="Normal, Golden, Signature, or Diamond" />
-                        <ComboBox Width="135" ItemsSource="{Binding OwnershipTypes}" SelectedItem="{Binding SelectedOwnership}"
-                                  ToolTip="Rule-safe means only that your configured copy rule considers these copies extra. It is still your decision." />
+                        <StackPanel>
+                            <TextBlock Text="Search" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+                            <TextBox Width="235" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="Searches card name, expansion, mechanic, tribe, type, class, card ID, and card text." />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Expansion" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+                            <ComboBox x:Name="ExpansionFilter" Width="220" ItemsSource="{Binding Expansions}"
+                                      SelectedItem="{Binding SelectedExpansion, Mode=TwoWay}" SelectedIndex="0" ToolTip="Expansion" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Rarity" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+                            <ComboBox Width="115" ItemsSource="{Binding Rarities}" SelectedItem="{Binding SelectedRarity}" ToolTip="Rarity" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Class" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+                            <ComboBox x:Name="ClassFilter" Width="135" ItemsSource="{Binding Classes}"
+                                      SelectedItem="{Binding SelectedClass, Mode=TwoWay}" SelectedIndex="0" ToolTip="Class" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Format" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+                            <ComboBox Width="115" ItemsSource="{Binding Formats}" SelectedItem="{Binding SelectedFormat}" ToolTip="Standard or Wild" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Premium" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+                            <ComboBox Width="120" ItemsSource="{Binding Premiums}" SelectedItem="{Binding SelectedPremium}" ToolTip="Normal, Golden, Signature, or Diamond" />
+                        </StackPanel>
                     </WrapPanel>
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding CardsView}" SelectedItem="{Binding SelectedCard}" AlternationCount="2">
+                    <DataGrid x:Name="CollectionGrid" Grid.Row="1" ItemsSource="{Binding CardsView}"
+                              SelectedItem="{Binding SelectedCard}" AlternationCount="2"
+                              SelectionMode="Extended" SelectionUnit="FullRow"
+							  SelectionChanged="CollectionGrid_OnSelectionChanged"
+							  Sorting="DataGrid_OnSorting">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" />
-                            <DataGridTextColumn Header="Expansion" Binding="{Binding Expansion}" Width="130" />
+                            <DataGridTextColumn Header="Expansion" Binding="{Binding Expansion}" Width="SizeToCells" MinWidth="140" MaxWidth="260" />
                             <DataGridTextColumn Header="Rarity" Binding="{Binding Rarity}" Width="85" />
-                            <DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="105" />
+                            <DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="220" />
                             <DataGridTextColumn Header="Type" Binding="{Binding CardType}" Width="95" />
-                            <DataGridTextColumn Header="Premium" Binding="{Binding Premium}" Width="90" />
-                            <DataGridTextColumn Header="Owned" Binding="{Binding Owned}" Width="65" />
-                            <DataGridTextColumn Header="Trial" Binding="{Binding Trial}" Width="55" />
-                            <DataGridTextColumn Header="Deck max" Binding="{Binding UsedInDeck}" Width="75" />
+							<DataGridTextColumn Header="Premium" Binding="{Binding Premium}" SortMemberPath="PremiumSortOrder" Width="90" />
+							<DataGridTextColumn Header="Owned" Binding="{Binding Owned}" Width="65" />
+							<DataGridTextColumn Header="Deck max" Binding="{Binding DeckMax}" Width="75" />
                             <DataGridTextColumn Header="Keep" Binding="{Binding Keep}" Width="55" />
                             <DataGridTextColumn Header="Extra" Binding="{Binding Extra}" Width="55" />
                             <DataGridTextColumn Header="Dust ea." Binding="{Binding DustEach}" Width="70" />
@@ -119,12 +140,19 @@
                     </DataGrid>
                     <DockPanel Grid.Row="2" Margin="0,6,0,0">
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                            <Button Content="Add one to plan" Command="{Binding AddSelectedCommand}" />
-                            <Button Content="Protect card" Command="{Binding ProtectCommand}" />
+                            <Button Content="Add selected to plan" Command="{Binding AddSelectedCommand}"
+                                    ToolTip="Select multiple rows with Ctrl or Shift, then add one copy of each selected card." />
+                            <Button Content="Protect selected" Command="{Binding ProtectCommand}"
+                                    ToolTip="Select multiple rows with Ctrl or Shift, then protect all selected cards." />
+							<Button x:Name="MarkUncraftableButton" Content="Mark uncraftable" Command="{Binding MarkUncraftableCommand}"
+									ToolTip="Mark each selected premium variant as uncraftable, remove it from Collection, and include it in the JSON report." />
                         </StackPanel>
-                        <TextBlock VerticalAlignment="Center" Foreground="#AEB5C2"
-                                   Text="Unused means no saved HDT deck currently needs the card; it does not mean safe to disenchant."
-                                   ToolTip="ELI5: a card can be absent from today's decks and still be useful tomorrow. DustFinder only calls copies extra after the keep rules are satisfied." />
+						<StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+							<TextBlock x:Name="CollectionCountText" Text="{Binding CollectionCountLabel}" FontWeight="SemiBold" Margin="0,0,18,0" />
+							<TextBlock Foreground="#AEB5C2"
+									   Text="Hold Ctrl or Shift to select multiple rows. Only pasted decks provide automatic deck protection."
+									   ToolTip="DustFinder only calls copies extra after the configured keep rules are satisfied." />
+						</StackPanel>
                     </DockPanel>
                 </Grid>
             </TabItem>
@@ -133,8 +161,9 @@
                 <Grid Margin="8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
+						<RowDefinition Height="*" />
+						<RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <WrapPanel Grid.Row="0" VerticalAlignment="Center">
                         <TextBlock Text="Target dust" VerticalAlignment="Center" Margin="3" />
@@ -146,17 +175,62 @@
                         <TextBlock Text="Remaining:" VerticalAlignment="Center" Margin="20,0,4,0" />
                         <TextBlock Text="{Binding RemainingDust}" FontWeight="Bold" VerticalAlignment="Center" />
                     </WrapPanel>
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding PlanRows}" SelectedItem="{Binding SelectedPlanRow}" AlternationCount="2">
+					<WrapPanel Grid.Row="1" Margin="0,6,0,6">
+						<StackPanel>
+							<TextBlock Text="Search" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+							<TextBox Width="235" Text="{Binding PlannerSearchText, UpdateSourceTrigger=PropertyChanged}" />
+						</StackPanel>
+						<StackPanel>
+							<TextBlock Text="Expansion" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+							<ComboBox x:Name="PlannerExpansionFilter" Width="220" ItemsSource="{Binding Expansions}"
+									  SelectedItem="{Binding SelectedPlannerExpansion, Mode=TwoWay}" SelectedIndex="0" />
+						</StackPanel>
+						<StackPanel>
+							<TextBlock Text="Rarity" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+							<ComboBox x:Name="PlannerRarityFilter" Width="115" ItemsSource="{Binding Rarities}"
+									  SelectedItem="{Binding SelectedPlannerRarity, Mode=TwoWay}" SelectedIndex="0" />
+						</StackPanel>
+						<StackPanel>
+							<TextBlock Text="Class" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+							<ComboBox x:Name="PlannerClassFilter" Width="135" ItemsSource="{Binding Classes}"
+									  SelectedItem="{Binding SelectedPlannerClass, Mode=TwoWay}" SelectedIndex="0" />
+						</StackPanel>
+						<StackPanel>
+							<TextBlock Text="Format" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+							<ComboBox x:Name="PlannerFormatFilter" Width="115" ItemsSource="{Binding Formats}"
+									  SelectedItem="{Binding SelectedPlannerFormat, Mode=TwoWay}" SelectedIndex="0" />
+						</StackPanel>
+						<StackPanel>
+							<TextBlock Text="Premium" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+							<ComboBox x:Name="PlannerPremiumFilter" Width="120" ItemsSource="{Binding Premiums}"
+									  SelectedItem="{Binding SelectedPlannerPremium, Mode=TwoWay}" SelectedIndex="0" />
+						</StackPanel>
+					</WrapPanel>
+                    <DataGrid x:Name="PlanGrid" Grid.Row="2" ItemsSource="{Binding PlanRowsView}" SelectedItem="{Binding SelectedPlanRow}"
+							  AlternationCount="2" SelectionMode="Extended" SelectionUnit="FullRow"
+							  SelectionChanged="PlanGrid_OnSelectionChanged" Sorting="DataGrid_OnSorting">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Card" Binding="{Binding Name}" Width="*" />
-                            <DataGridTextColumn Header="Premium" Binding="{Binding Premium}" Width="120" />
-                            <DataGridTextColumn Header="Copies" Binding="{Binding Copies}" Width="90" />
-                            <DataGridTextColumn Header="Dust per copy" Binding="{Binding DustEach}" Width="120" />
-                            <DataGridTextColumn Header="Total dust" Binding="{Binding Total}" Width="110" />
+							<DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" />
+							<DataGridTextColumn Header="Expansion" Binding="{Binding Expansion}" Width="SizeToCells" MinWidth="140" MaxWidth="260" />
+							<DataGridTextColumn Header="Rarity" Binding="{Binding Rarity}" Width="85" />
+							<DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="220" />
+							<DataGridTextColumn Header="Type" Binding="{Binding CardType}" Width="95" />
+							<DataGridTextColumn Header="Premium" Binding="{Binding Premium}" SortMemberPath="PremiumSortOrder" Width="90" />
+							<DataGridTextColumn Header="Owned" Binding="{Binding Owned}" Width="65" />
+							<DataGridTextColumn Header="Deck max" Binding="{Binding DeckMax}" Width="75" />
+							<DataGridTextColumn Header="Keep" Binding="{Binding Keep}" Width="55" />
+							<DataGridTextColumn Header="Extra" Binding="{Binding Extra}" Width="55" />
+							<DataGridTextColumn Header="Dust ea." Binding="{Binding DustEach}" Width="70" />
+							<DataGridTextColumn Header="Potential" Binding="{Binding PotentialDust}" Width="75" />
+							<DataGridTextColumn Header="Assessment" Binding="{Binding Safety}" Width="190" />
+							<DataGridTextColumn Header="Plan copies" Binding="{Binding Copies}" Width="85" />
+							<DataGridTextColumn Header="Plan dust" Binding="{Binding Total}" Width="80" />
                         </DataGrid.Columns>
                     </DataGrid>
-                    <DockPanel Grid.Row="2" Margin="0,6,0,0">
+                    <DockPanel Grid.Row="3" Margin="0,6,0,0">
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+							<Button Content="Protect selected" Command="{Binding ProtectPlanCommand}"
+									ToolTip="Select plan rows with Ctrl or Shift, then protect those cards and remove them from future combinations." />
                             <Button Content="Remove one" Command="{Binding RemovePlanCommand}" />
                             <Button Content="Clear plan" Command="{Binding ClearPlanCommand}" />
                         </StackPanel>
@@ -165,20 +239,143 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Header="Protected cards">
+            <TabItem Header="Pasted decks">
                 <Grid Margin="8">
-                    <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-                    <DataGrid ItemsSource="{Binding ProtectedCards}" SelectedItem="{Binding SelectedProtectedCard}" AlternationCount="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock TextWrapping="Wrap" Margin="3,3,3,8" Foreground="#AEB5C2"
+                               Text="Paste a Hearthstone deck code or the complete text copied from Hearthstone. Every card in an imported deck is excluded from dust recommendations across all premium variants." />
+                    <Grid Grid.Row="1" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Height="105" AcceptsReturn="True" TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 Text="{Binding PastedDeckText, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="You can paste either only the AAE... deck code or Hearthstone's complete copied deck list." />
+                        <Button Grid.Column="1" VerticalAlignment="Bottom" Content="Import deck" Command="{Binding ImportPastedDeckCommand}" />
+                    </Grid>
+                    <DataGrid Grid.Row="2" ItemsSource="{Binding PastedDecks}" SelectedItem="{Binding SelectedPastedDeck}" AlternationCount="2">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
-                            <DataGridTextColumn Header="Expansion" Binding="{Binding Expansion}" Width="180" />
-                            <DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="140" />
-                            <DataGridTextColumn Header="Reason" Binding="{Binding Safety}" Width="180" />
+                            <DataGridTextColumn Header="Deck" Binding="{Binding Name}" Width="*" />
+                            <DataGridTextColumn Header="Format" Binding="{Binding Format}" Width="140" />
+                            <DataGridTextColumn Header="Unique cards" Binding="{Binding UniqueCards}" Width="110" />
+                            <DataGridTextColumn Header="Deck size" Binding="{Binding TotalCards}" Width="100" />
+                            <DataGridTextColumn Header="Imported (UTC)" Binding="{Binding ImportedAtUtc, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Width="155" />
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Button Grid.Row="1" HorizontalAlignment="Right" Content="Remove protection" Command="{Binding UnprotectCommand}" />
+                    <DockPanel Grid.Row="3" Margin="0,6,0,0">
+                        <Button DockPanel.Dock="Right" Content="Remove selected deck" Command="{Binding RemovePastedDeckCommand}" />
+                        <TextBlock VerticalAlignment="Center" Foreground="#F2C66D"
+                                   Text="Removing a deck also removes its protection unless another pasted deck still uses the card." />
+                    </DockPanel>
                 </Grid>
             </TabItem>
+
+            <TabItem Header="Protected cards">
+                <Grid Margin="8">
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="*" />
+						<RowDefinition Height="Auto" />
+					</Grid.RowDefinitions>
+					<WrapPanel Grid.Row="0" Margin="0,0,0,6">
+						<StackPanel>
+							<TextBlock Text="Search" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+							<TextBox Width="235" Text="{Binding ProtectedSearchText, UpdateSourceTrigger=PropertyChanged}" />
+						</StackPanel>
+						<StackPanel>
+							<TextBlock Text="Expansion" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+							<ComboBox x:Name="ProtectedExpansionFilter" Width="220" ItemsSource="{Binding ProtectedExpansions}"
+									  SelectedItem="{Binding SelectedProtectedExpansion, Mode=TwoWay}" SelectedIndex="0" />
+						</StackPanel>
+						<StackPanel>
+							<TextBlock Text="Rarity" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+							<ComboBox x:Name="ProtectedRarityFilter" Width="115" ItemsSource="{Binding ProtectedRarities}"
+									  SelectedItem="{Binding SelectedProtectedRarity, Mode=TwoWay}" SelectedIndex="0" />
+						</StackPanel>
+						<StackPanel>
+							<TextBlock Text="Class" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+							<ComboBox x:Name="ProtectedClassFilter" Width="180" ItemsSource="{Binding ProtectedClasses}"
+									  SelectedItem="{Binding SelectedProtectedClass, Mode=TwoWay}" SelectedIndex="0" />
+						</StackPanel>
+						<StackPanel>
+							<TextBlock Text="Format" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+							<ComboBox x:Name="ProtectedFormatFilter" Width="115" ItemsSource="{Binding ProtectedFormats}"
+									  SelectedItem="{Binding SelectedProtectedFormat, Mode=TwoWay}" SelectedIndex="0" />
+						</StackPanel>
+						<StackPanel>
+							<TextBlock Text="Premium" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+							<ComboBox x:Name="ProtectedPremiumFilter" Width="120" ItemsSource="{Binding ProtectedPremiums}"
+									  SelectedItem="{Binding SelectedProtectedPremium, Mode=TwoWay}" SelectedIndex="0" />
+						</StackPanel>
+						<StackPanel>
+							<TextBlock Text="Reason" Foreground="#AEB5C2" FontSize="11" Margin="4,0,0,0" />
+							<ComboBox x:Name="ProtectionReasonFilter" Width="180" ItemsSource="{Binding ProtectionReasons}"
+									  SelectedItem="{Binding SelectedProtectionReason, Mode=TwoWay}" SelectedIndex="0" />
+						</StackPanel>
+					</WrapPanel>
+					<DataGrid x:Name="ProtectedGrid" Grid.Row="1" ItemsSource="{Binding ProtectedCardsView}" SelectedItem="{Binding SelectedProtectedCard}"
+							  AlternationCount="2" Sorting="DataGrid_OnSorting">
+                        <DataGrid.Columns>
+							<DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="480" />
+							<DataGridTextColumn Header="Expansion" Binding="{Binding Expansion}" Width="220" />
+							<DataGridTextColumn Header="Rarity" Binding="{Binding Rarity}" Width="95" />
+							<DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="420" />
+							<DataGridTextColumn Header="Premium" Binding="{Binding Premium}" SortMemberPath="PremiumSortOrder" Width="110" />
+							<DataGridTextColumn Header="Reason" Binding="{Binding ProtectionReason}" Width="*" MinWidth="300" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+					<DockPanel Grid.Row="2" Margin="0,6,0,0">
+                        <Button DockPanel.Dock="Right" Content="Remove protection" Command="{Binding UnprotectCommand}" />
+						<StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+							<TextBlock x:Name="ProtectedCountText" Text="{Binding ProtectedCountLabel}" FontWeight="SemiBold" Margin="0,0,18,0" />
+							<TextBlock Foreground="#AEB5C2"
+									   Text="Pasted-deck protection is removed in Pasted decks; premium-type protection is changed in Settings." />
+						</StackPanel>
+                    </DockPanel>
+                </Grid>
+            </TabItem>
+
+			<TabItem Header="Uncraftable reports">
+				<Grid Margin="8">
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="*" />
+						<RowDefinition Height="Auto" />
+					</Grid.RowDefinitions>
+					<TextBlock Margin="3,3,3,8" TextWrapping="Wrap" Foreground="#AEB5C2"
+							   Text="These are your local variant-specific overrides. They are excluded from Collection and dust recommendations. Copy the JSON and paste it into Codex so the built-in recognition rules can be improved." />
+					<DataGrid x:Name="UncraftableReportsGrid" Grid.Row="1" ItemsSource="{Binding ManualUncraftableCards}"
+							  SelectedItem="{Binding SelectedManualUncraftableCard}" AlternationCount="2">
+						<DataGrid.Columns>
+							<DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
+							<DataGridTextColumn Header="Card ID" Binding="{Binding CardId}" Width="145" />
+							<DataGridTextColumn Header="DBF ID" Binding="{Binding DbfId}" Width="85" />
+							<DataGridTextColumn Header="Expansion" Binding="{Binding Expansion}" Width="210" />
+							<DataGridTextColumn Header="Class" Binding="{Binding CardClass}" Width="180" />
+							<DataGridTextColumn Header="Rarity" Binding="{Binding Rarity}" Width="95" />
+							<DataGridTextColumn Header="Premium" Binding="{Binding Premium}" Width="100" />
+							<DataGridTextColumn Header="Reported (UTC)" Binding="{Binding ReportedAtUtc, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Width="145" />
+						</DataGrid.Columns>
+					</DataGrid>
+					<DockPanel Grid.Row="2" Margin="0,6,0,0">
+						<StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+							<Button Content="Remove selected override" Command="{Binding RemoveUncraftableCommand}"
+									ToolTip="Allow DustFinder to classify this premium variant from metadata again." />
+							<Button x:Name="CopyUncraftableJsonButton" Content="Copy JSON" Command="{Binding CopyUncraftableJsonCommand}"
+									ToolTip="Copy the complete report to the clipboard so you can paste it into Codex." />
+						</StackPanel>
+						<TextBlock VerticalAlignment="Center" Foreground="#F2C66D"
+								   Text="Overrides are exact per premium variant; marking Golden does not hide Normal." />
+					</DockPanel>
+				</Grid>
+			</TabItem>
 
             <TabItem Header="Snapshot history">
                 <Grid Margin="8">
@@ -202,14 +399,14 @@
                     <TextBlock Text="Copies to keep" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8" />
                     <DockPanel Margin="0,3"><TextBox DockPanel.Dock="Right" Width="90" Text="{Binding Settings.KeepNonLegendary}" /><TextBlock Text="Non-Legendary cards" VerticalAlignment="Center" /></DockPanel>
                     <DockPanel Margin="0,3"><TextBox DockPanel.Dock="Right" Width="90" Text="{Binding Settings.KeepLegendary}" /><TextBlock Text="Legendary cards" VerticalAlignment="Center" /></DockPanel>
-                    <TextBlock Text="Which premium types count toward that keep total?" Margin="0,16,0,5"
-                               ToolTip="ELI5: if Golden counts, one Golden copy can fill one of the copies you asked DustFinder to keep." />
-                    <CheckBox Content="Normal" IsChecked="{Binding Settings.NormalCountsTowardKeep}" />
-                    <CheckBox Content="Golden" IsChecked="{Binding Settings.GoldenCountsTowardKeep}" />
-                    <CheckBox Content="Signature" IsChecked="{Binding Settings.SignatureCountsTowardKeep}" />
-                    <CheckBox Content="Diamond" IsChecked="{Binding Settings.DiamondCountsTowardKeep}" />
+					<TextBlock Text="Which premium types should be protected completely?" Margin="0,16,0,5"
+							   ToolTip="Checked premium types are hidden from Collection and dust recommendations." />
+					<CheckBox Content="Normal" IsChecked="{Binding Settings.ProtectNormalPremium}" />
+					<CheckBox Content="Golden" IsChecked="{Binding Settings.ProtectGoldenPremium}" />
+					<CheckBox Content="Signature" IsChecked="{Binding Settings.ProtectSignaturePremium}" />
+					<CheckBox Content="Diamond" IsChecked="{Binding Settings.ProtectDiamondPremium}" />
                     <TextBlock Margin="0,14,0,5" TextWrapping="Wrap" Foreground="#AEB5C2"
-                               Text="Diamond and Signature copies can satisfy your keep rule, but DustFinder assigns them zero disenchant value and never recommends them." />
+							   Text="Checked premium types are protected completely, appear under Protected cards, and count toward copies to keep. Unchecked premium types are not reserved and can become Rule-safe." />
                     <Button HorizontalAlignment="Left" Content="Review and save rules" Command="{Binding SaveSettingsCommand}" />
                 </StackPanel>
             </TabItem>
@@ -220,4 +417,3 @@
         </Border>
     </Grid>
 </Window>
-

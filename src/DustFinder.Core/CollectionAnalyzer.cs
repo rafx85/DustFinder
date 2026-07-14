@@ -17,7 +17,8 @@ public sealed class CollectionAnalyzer
 	public IReadOnlyList<AnalysisResult> Analyze(
 		IEnumerable<CollectionEntry> entries,
 		IReadOnlyDictionary<int, int> maximumDeckCopies,
-		UserSettings settings)
+		UserSettings settings,
+		ISet<int>? pastedDeckCardDbfIds = null)
 	{
 		if(entries == null)
 			throw new ArgumentNullException(nameof(entries));
@@ -27,14 +28,23 @@ public sealed class CollectionAnalyzer
 			throw new ArgumentNullException(nameof(settings));
 
 		var results = new List<AnalysisResult>();
+		var manualUncraftableKeys = new HashSet<string>(
+			(settings.ManualUncraftableCards ?? new List<ManualUncraftableCard>())
+				.Where(x => x != null && !string.IsNullOrWhiteSpace(x.CardId))
+				.Select(x => x.Key),
+			StringComparer.OrdinalIgnoreCase);
 		foreach(var group in entries.GroupBy(x => x.Card.DbfId))
 		{
+			var protectedByPastedDeck = pastedDeckCardDbfIds?.Contains(group.Key) == true;
 			var variants = group.ToDictionary(x => x.Premium);
 			var first = group.First();
 			var baseKeep = first.Card.Rarity == CardRarity.Legendary
 				? Math.Max(0, settings.KeepLegendary)
 				: Math.Max(0, settings.KeepNonLegendary);
-			var deckCopies = maximumDeckCopies.TryGetValue(group.Key, out var used) ? Math.Max(0, used) : 0;
+			var deckCopyLimit = first.Card.Rarity == CardRarity.Legendary ? 1 : 2;
+			var deckCopies = maximumDeckCopies.TryGetValue(group.Key, out var used)
+				? Math.Min(deckCopyLimit, Math.Max(0, used))
+				: 0;
 			var keepTarget = Math.Max(baseKeep, deckCopies);
 			var remainingToReserve = keepTarget;
 			var reserved = new Dictionary<PremiumType, int>();
@@ -52,10 +62,18 @@ public sealed class CollectionAnalyzer
 			foreach(var entry in group.OrderBy(x => (int)x.Premium))
 			{
 				var protectedByUser = settings.ProtectedCardIds.Contains(entry.Card.CardId);
+				var protectedByPremium = settings.IsPremiumProtected(entry.Premium);
+				var manuallyUncraftable = manualUncraftableKeys.Contains($"{entry.Card.CardId}:{(int)entry.Premium}");
 				var dust = DustValues.GetDisenchantValue(entry.Card.Rarity, entry.Premium);
-				var disenchantable = entry.Card.IsCollectible && entry.Card.IsCraftableByMetadata && dust > 0;
+				var premiumIsDisenchantable = entry.Premium != PremiumType.Golden
+					|| entry.Card.IsGoldenDisenchantableByMetadata != false;
+				var disenchantable = !manuallyUncraftable
+					&& entry.Card.IsCollectible
+					&& entry.Card.IsCraftableByMetadata
+					&& premiumIsDisenchantable
+					&& dust > 0;
 				var reservedCopies = reserved.TryGetValue(entry.Premium, out var value) ? value : 0;
-				var recommended = disenchantable && !protectedByUser
+				var recommended = disenchantable && !protectedByUser && !protectedByPastedDeck && !protectedByPremium
 					? Math.Max(0, entry.Count - reservedCopies)
 					: 0;
 
@@ -63,11 +81,15 @@ public sealed class CollectionAnalyzer
 				{
 					Entry = entry,
 					UsedByKnownDecks = deckCopies,
+					DeckCopyLimit = deckCopyLimit,
 					KeepTarget = keepTarget,
 					ReservedCopies = reservedCopies,
 					RecommendedCopies = recommended,
 					DustPerCopy = dust,
 					IsProtected = protectedByUser,
+					IsInPastedDeck = protectedByPastedDeck,
+					IsManuallyUncraftable = manuallyUncraftable,
+					IsPremiumProtected = protectedByPremium,
 					IsDisenchantable = disenchantable
 				});
 			}
@@ -82,6 +104,12 @@ public sealed class CollectionAnalyzer
 
 public static class DustValues
 {
+	public static bool IsHighestValueForRarity(CardRarity rarity, int dustPerCopy)
+	{
+		var highestValue = GetDisenchantValue(rarity, PremiumType.Golden);
+		return highestValue > 0 && dustPerCopy >= highestValue;
+	}
+
 	public static int GetDisenchantValue(CardRarity rarity, PremiumType premium)
 	{
 		if(premium == PremiumType.Normal)
@@ -96,7 +124,7 @@ public static class DustValues
 			};
 		}
 
-		if(premium == PremiumType.Golden)
+		if(premium is PremiumType.Golden or PremiumType.Signature or PremiumType.Diamond)
 		{
 			return rarity switch
 			{
@@ -108,9 +136,8 @@ public static class DustValues
 			};
 		}
 
-		// Current Diamond and Signature cards are intentionally treated as zero.
-		// DustFinder must under-promise rather than suggest an uncraftable cosmetic.
+		// Disenchantable Signature and Diamond cards return Golden-equivalent dust.
+		// Special grants remain excluded when their card metadata marks them uncraftable.
 		return 0;
 	}
 }
-

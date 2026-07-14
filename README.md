@@ -9,8 +9,9 @@ DustFinder is a separate, recommendation-only Hearthstone Deck Tracker plugin fo
 - Handles normal, golden, Diamond, Signature, and temporary/trial counts conservatively.
 - Searches name, expansion, mechanic, tribe/race, type, class, card ID, and card text.
 - Combines expansion, rarity, class, format, premium, and ownership/safety filters.
-- Compares cards with all saved, non-archived HDT decks, including sideboards.
-- Distinguishes configured extras, unused cards, protected cards, and cards that cannot be recommended.
+- Imports pasted Hearthstone deck codes and excludes every card in those decks from dust recommendations across all premium variants. Saved HDT decks are intentionally ignored.
+- Supports variant-specific manual uncraftable overrides with a review tab and clipboard-ready JSON export for correcting recognition rules.
+- Distinguishes configured extras, protected cards, and cards that cannot be recommended.
 - Uses bounded optimization for exact or closest dust combinations, with manual add/remove controls.
 - Uses atomic settings writes, backups, corruption recovery, and explicit confirmation for destructive/protection-rule actions.
 
@@ -56,7 +57,6 @@ The result is `dist\DustFinder-0.1.0.zip` with this HDT-compatible layout:
 DustFinder/
   DustFinder.Plugin.dll
   DustFinder.Core.dll
-  README.md
 ```
 
 No HDT, HearthMirror, HearthDb, MahApps, or Newtonsoft binaries are bundled.
@@ -83,14 +83,14 @@ scripts/                   build, official-HDT resolver, packaging, verification
 
 ## Safety model
 
-- Only normal and golden variants can receive a standard disenchant value.
-- Free, Core, Diamond, Signature, temporary, unknown, non-collectible, and conservatively classified grant-only cards receive zero.
-- "Unused" never means automatically safe.
+- Normal variants receive normal disenchant values; disenchantable Golden, Diamond, and Signature variants receive Golden values.
+- Free, Core, Special Events, temporary, unknown, non-collectible, and conservatively classified grant-only cards are excluded.
+- Only pasted decks provide automatic deck protection; saved HDT decks are ignored.
 - The planner only uses copies classified as extra by the active keep rules.
 - Protection applies to every premium type of a card and requires confirmation to change.
+- Cards in pasted decks remain excluded until the corresponding pasted decks are removed.
 - Temporary full-refund windows are deliberately not assumed.
 
 ## CI
 
 GitHub Actions runs on Windows, downloads the pinned official HDT `v1.53.8` release package without committing it, builds the plugin, runs tests, creates the release ZIP, and uploads it as an artifact.
-

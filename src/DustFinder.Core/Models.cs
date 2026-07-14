@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 
 namespace DustFinder.Core;
@@ -39,6 +40,8 @@ public sealed class CardMetadata
 	[DataMember(Order = 11)] public CardRarity Rarity { get; set; }
 	[DataMember(Order = 12)] public bool IsCollectible { get; set; }
 	[DataMember(Order = 13)] public bool IsCraftableByMetadata { get; set; }
+	[DataMember(Order = 14)] public List<string> CardClasses { get; set; } = new();
+	[DataMember(Order = 15)] public bool? IsGoldenDisenchantableByMetadata { get; set; }
 }
 
 [DataContract]
@@ -75,7 +78,7 @@ public sealed class CollectionSnapshot
 [DataContract]
 public sealed class UserSettings
 {
-	[DataMember(Order = 1)] public int SchemaVersion { get; set; } = 1;
+	[DataMember(Order = 1)] public int SchemaVersion { get; set; } = 4;
 	[DataMember(Order = 2)] public int KeepNonLegendary { get; set; } = 2;
 	[DataMember(Order = 3)] public int KeepLegendary { get; set; } = 1;
 	[DataMember(Order = 4)] public bool NormalCountsTowardKeep { get; set; } = true;
@@ -83,6 +86,12 @@ public sealed class UserSettings
 	[DataMember(Order = 6)] public bool DiamondCountsTowardKeep { get; set; }
 	[DataMember(Order = 7)] public bool SignatureCountsTowardKeep { get; set; }
 	[DataMember(Order = 8)] public HashSet<string> ProtectedCardIds { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+	[DataMember(Order = 9)] public List<PastedDeckDefinition> PastedDecks { get; set; } = new();
+	[DataMember(Order = 10)] public List<ManualUncraftableCard> ManualUncraftableCards { get; set; } = new();
+	[DataMember(Order = 11)] public bool ProtectNormalPremium { get; set; } = true;
+	[DataMember(Order = 12)] public bool ProtectGoldenPremium { get; set; }
+	[DataMember(Order = 13)] public bool ProtectSignaturePremium { get; set; }
+	[DataMember(Order = 14)] public bool ProtectDiamondPremium { get; set; }
 
 	public bool CountsTowardKeep(PremiumType premium) => premium switch
 	{
@@ -92,19 +101,62 @@ public sealed class UserSettings
 		PremiumType.Signature => SignatureCountsTowardKeep,
 		_ => false
 	};
+
+	public bool IsPremiumProtected(PremiumType premium) => premium switch
+	{
+		PremiumType.Normal => ProtectNormalPremium,
+		PremiumType.Golden => ProtectGoldenPremium,
+		PremiumType.Signature => ProtectSignaturePremium,
+		PremiumType.Diamond => ProtectDiamondPremium,
+		_ => false
+	};
+}
+
+[DataContract]
+public sealed class ManualUncraftableCard
+{
+	[DataMember(Order = 1)] public string CardId { get; set; } = string.Empty;
+	[DataMember(Order = 2)] public int DbfId { get; set; }
+	[DataMember(Order = 3)] public string Name { get; set; } = string.Empty;
+	[DataMember(Order = 4)] public string Expansion { get; set; } = string.Empty;
+	[DataMember(Order = 5)] public string CardClass { get; set; } = string.Empty;
+	[DataMember(Order = 6)] public CardRarity Rarity { get; set; }
+	[DataMember(Order = 7)] public PremiumType Premium { get; set; }
+	[DataMember(Order = 8)] public DateTime ReportedAtUtc { get; set; } = DateTime.UtcNow;
+
+	public string Key => $"{CardId}:{(int)Premium}";
+}
+
+[DataContract]
+public sealed class PastedDeckDefinition
+{
+	[DataMember(Order = 1)] public string Id { get; set; } = Guid.NewGuid().ToString("N");
+	[DataMember(Order = 2)] public string Name { get; set; } = string.Empty;
+	[DataMember(Order = 3)] public string DeckCode { get; set; } = string.Empty;
+	[DataMember(Order = 4)] public string Format { get; set; } = string.Empty;
+	[DataMember(Order = 5)] public int HeroDbfId { get; set; }
+	[DataMember(Order = 6)] public Dictionary<int, int> CardDbfIds { get; set; } = new();
+	[DataMember(Order = 7)] public DateTime ImportedAtUtc { get; set; } = DateTime.UtcNow;
+
+	public int UniqueCards => CardDbfIds?.Count ?? 0;
+	public int TotalCards => CardDbfIds?.Values.Sum(x => Math.Max(0, x)) ?? 0;
 }
 
 public sealed class AnalysisResult
 {
 	public CollectionEntry Entry { get; set; } = new();
 	public int UsedByKnownDecks { get; set; }
+	public int DeckCopyLimit { get; set; }
 	public int KeepTarget { get; set; }
 	public int ReservedCopies { get; set; }
 	public int RecommendedCopies { get; set; }
 	public int DustPerCopy { get; set; }
 	public bool IsProtected { get; set; }
+	public bool IsInPastedDeck { get; set; }
+	public bool IsManuallyUncraftable { get; set; }
+	public bool IsPremiumProtected { get; set; }
 	public bool IsDisenchantable { get; set; }
-	public bool IsSafeByRules => IsDisenchantable && !IsProtected && RecommendedCopies > 0;
+	public bool IsSafeByRules => IsDisenchantable && !IsProtected && !IsInPastedDeck && !IsPremiumProtected && RecommendedCopies > 0;
 	public bool IsUnusedByKnownDecks => UsedByKnownDecks == 0;
 
 	public string SafetyLabel
@@ -113,13 +165,17 @@ public sealed class AnalysisResult
 		{
 			if(IsProtected)
 				return "Protected by you";
+			if(IsInPastedDeck)
+				return "Used in pasted deck";
+			if(IsManuallyUncraftable)
+				return "Marked uncraftable by you";
+			if(IsPremiumProtected)
+				return "Protected premium type";
 			if(!IsDisenchantable)
 				return "Cannot be disenchanted";
 			if(RecommendedCopies > 0)
 				return "Extra by configured rules";
-			if(IsUnusedByKnownDecks)
-				return "Unused (not automatically safe)";
-			return "Kept for copies/decks";
+			return "Kept by configured copy rules";
 		}
 	}
 }

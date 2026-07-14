@@ -24,7 +24,6 @@ New-Item -ItemType Directory -Force -Path $pluginRoot, $dist | Out-Null
 $pluginOutput = Join-Path $root 'src\DustFinder.Plugin\bin\x64\Release\net472'
 Copy-Item -LiteralPath (Join-Path $pluginOutput 'DustFinder.Plugin.dll') -Destination $pluginRoot
 Copy-Item -LiteralPath (Join-Path $pluginOutput 'DustFinder.Core.dll') -Destination $pluginRoot
-Copy-Item -LiteralPath (Join-Path $root 'README.md') -Destination (Join-Path $pluginRoot 'README.md')
 
 $zip = Join-Path $dist "DustFinder-$Version.zip"
 if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }

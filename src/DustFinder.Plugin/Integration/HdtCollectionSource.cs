@@ -1,11 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DustFinder.Core;
 using HearthDb;
 using HearthDb.Enums;
-using Hearthstone_Deck_Tracker;
 using Hearthstone_Deck_Tracker.Hearthstone;
 using CorePremiumType = DustFinder.Core.PremiumType;
 
@@ -13,12 +11,6 @@ namespace DustFinder.Plugin.Integration;
 
 public sealed class HdtCollectionSource : IHdtCollectionSource
 {
-	private static readonly HashSet<string> KnownNonDisenchantableCards = new(StringComparer.OrdinalIgnoreCase)
-	{
-		"OG_280", // C'Thun grant
-		"OG_281"  // Beckoner of Evil grant
-	};
-
 	public async Task<CollectionLoadResult> LoadAsync()
 	{
 		var collection = await CollectionHelpers.Hearthstone.GetCollection().ConfigureAwait(true);
@@ -33,8 +25,7 @@ public sealed class HdtCollectionSource : IHdtCollectionSource
 				AccountLo = collection.AccountLo,
 				Region = DecodeRegion(collection.AccountHi),
 				BattleTag = collection.BattleTag
-			},
-			MaximumDeckCopies = ReadDeckUsage()
+			}
 		};
 
 		foreach(var pair in collection.Cards)
@@ -65,10 +56,15 @@ public sealed class HdtCollectionSource : IHdtCollectionSource
 	private static CardMetadata CreateMetadata(HearthDb.Card card)
 	{
 		var rarity = (CardRarity)(int)card.Rarity;
-		var isCraftable = card.Collectible
-			&& rarity is CardRarity.Common or CardRarity.Rare or CardRarity.Epic or CardRarity.Legendary
-			&& card.Set != CardSet.CORE
-			&& !KnownNonDisenchantableCards.Contains(card.Id);
+		var multipleClassesMask = card.Entity.Tags
+			.FirstOrDefault(x => x.EnumId == (int)GameTag.MULTIPLE_CLASSES)?.Value ?? 0;
+		var cardClasses = CardClassNames.GetClassCodes(card.Class.ToString(), multipleClassesMask);
+		var isCraftable = CardCraftabilityRules.IsPotentiallyCraftable(
+			card.Collectible,
+			rarity,
+			card.Set.ToString(),
+			card.Id);
+		var howToEarnGolden = card.Entity.GetLocString(GameTag.HOW_TO_EARN_GOLDEN, Locale.enUS);
 		var races = new[] { card.Race, card.SecondaryRace }
 			.Where(x => x != Race.INVALID)
 			.Select(x => x.ToString())
@@ -81,31 +77,28 @@ public sealed class HdtCollectionSource : IHdtCollectionSource
 			Name = card.Name ?? card.Id ?? card.DbfId.ToString(),
 			Expansion = card.Set.ToString(),
 			CardClass = card.Class.ToString(),
+			CardClasses = cardClasses.ToList(),
 			CardType = card.Type.ToString(),
 			Race = string.Join(", ", races),
 			Mechanics = string.Join(", ", card.Mechanics ?? Array.Empty<string>()),
 			Text = card.Text ?? string.Empty,
-			Format = card.IsClassic ? "Classic" : card.IsWild ? "Wild" : "Standard",
+			Format = IsStandardCard(card) ? "Standard" : "Wild",
 			Rarity = rarity,
 			IsCollectible = card.Collectible,
-			IsCraftableByMetadata = isCraftable
+			IsCraftableByMetadata = isCraftable,
+			IsGoldenDisenchantableByMetadata = CardCraftabilityRules.IsPotentiallyDisenchantableGolden(
+				isCraftable,
+				howToEarnGolden)
 		};
 	}
 
-	private static Dictionary<int, int> ReadDeckUsage()
+	private static bool IsStandardCard(HearthDb.Card card)
 	{
-		var maximum = new Dictionary<int, int>();
-		foreach(var deck in DeckList.Instance.Decks.Where(x => !x.Archived))
-		{
-			var version = deck.GetSelectedDeckVersion();
-			var cards = version.Cards
-				.Concat(version.Sideboards?.SelectMany(x => x.Cards) ?? Enumerable.Empty<Hearthstone_Deck_Tracker.Hearthstone.Card>())
-				.GroupBy(x => x.DbfId)
-				.ToDictionary(x => x.Key, x => x.Sum(card => Math.Max(0, card.Count)));
-			foreach(var pair in cards)
-				maximum[pair.Key] = maximum.TryGetValue(pair.Key, out var current) ? Math.Max(current, pair.Value) : pair.Value;
-		}
-		return maximum;
+		var hdtCard = new Hearthstone_Deck_Tracker.Hearthstone.Card(card, false);
+		return CardUtils.FilterCardsByFormat(
+			new[] { hdtCard },
+			GameType.GT_RANKED,
+			FormatType.FT_STANDARD).Any();
 	}
 
 	private static string DecodeRegion(ulong accountHi) => ((int)((accountHi >> 32) & 0xFF)) switch

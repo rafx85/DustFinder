@@ -30,10 +30,98 @@ try {
     if ($instance.Name -ne 'DustFinder') { throw 'The plugin metadata could not be read.' }
     $viewModelType = $assembly.GetType('DustFinder.Plugin.ViewModels.MainViewModel', $true)
     $windowType = $assembly.GetType('DustFinder.Plugin.Views.MainWindow', $true)
-    $viewModel = [Runtime.Serialization.FormatterServices]::GetUninitializedObject($viewModelType)
+    $sourceType = $assembly.GetType('DustFinder.Plugin.Integration.HdtCollectionSource', $true)
+    $source = [Activator]::CreateInstance($sourceType)
+    $viewModel = [Activator]::CreateInstance($viewModelType, @($source, $plugin))
     $window = [Activator]::CreateInstance($windowType, @($viewModel))
+    $collectionGrid = $window.FindName('CollectionGrid')
+    if ($null -eq $collectionGrid -or $collectionGrid.SelectionMode.ToString() -ne 'Extended') {
+        throw 'The collection grid is not configured for Ctrl/Shift multi-selection.'
+    }
+    if ($collectionGrid.Columns[1].Width.UnitType.ToString() -ne 'SizeToCells') {
+        throw 'The expansion column is not configured to size itself to expansion names.'
+    }
+    if ($collectionGrid.Columns.Header -contains 'Trial') {
+        throw 'The removed Trial column is still present in the collection view.'
+    }
+    $deckMaxColumn = $collectionGrid.Columns | Where-Object { $_.Header -eq 'Deck max' } | Select-Object -First 1
+    if ($null -eq $deckMaxColumn -or $deckMaxColumn.Binding.Path.Path -ne 'DeckMax') {
+        throw 'The Deck max column is not bound to the legal card-copy limit.'
+    }
+    $collectionPremiumColumn = $collectionGrid.Columns | Where-Object { $_.Header -eq 'Premium' } | Select-Object -First 1
+    if ($null -eq $collectionPremiumColumn -or $collectionPremiumColumn.SortMemberPath -ne 'PremiumSortOrder') {
+        throw 'The Collection Premium column does not use the Diamond-to-Normal sort order.'
+    }
+    $filterChecks = @{
+        ExpansionFilter = 'Expansions'
+        ClassFilter = 'Classes'
+        PlannerExpansionFilter = 'Expansions'
+        PlannerRarityFilter = 'Rarities'
+        PlannerClassFilter = 'Classes'
+        PlannerFormatFilter = 'Formats'
+        PlannerPremiumFilter = 'Premiums'
+    }
+    foreach ($filterName in $filterChecks.Keys) {
+        $filter = $window.FindName($filterName)
+        $localIndex = $filter.ReadLocalValue([System.Windows.Controls.Primitives.Selector]::SelectedIndexProperty)
+        $sourceItems = $viewModel.($filterChecks[$filterName])
+        if ($null -eq $filter -or [int]$localIndex -ne 0 -or $sourceItems.Count -eq 0 -or $sourceItems[0] -ne 'All') {
+            throw "The $filterName dropdown does not visibly default to All."
+        }
+    }
+    if ($null -eq $window.FindName('MarkUncraftableButton') -or
+        $null -eq $window.FindName('UncraftableReportsGrid') -or
+        $null -eq $window.FindName('CopyUncraftableJsonButton')) {
+        throw 'The manual uncraftable reporting controls were not found.'
+    }
+    if ($null -eq $window.FindName('CollectionCountText') -or $null -eq $window.FindName('ProtectedCountText')) {
+        throw 'The filtered and total card counters were not found.'
+    }
+    if ($null -ne $window.FindName('DustAmountFilter')) {
+        throw 'The removed Collection dust-value filter is still present.'
+    }
+    $planGrid = $window.FindName('PlanGrid')
+    $requiredPlanColumns = @('Name', 'Expansion', 'Rarity', 'Class', 'Type', 'Premium', 'Owned', 'Deck max', 'Keep', 'Extra', 'Dust ea.', 'Potential', 'Assessment', 'Plan copies', 'Plan dust')
+    if ($null -eq $planGrid -or $planGrid.SelectionMode.ToString() -ne 'Extended') {
+        throw 'The dust-plan grid is not configured for Ctrl/Shift multi-selection.'
+    }
+    foreach ($header in $requiredPlanColumns) {
+        if ($planGrid.Columns.Header -notcontains $header) {
+            throw "The dust-plan grid is missing the $header column."
+        }
+    }
+    $planPremiumColumn = $planGrid.Columns | Where-Object { $_.Header -eq 'Premium' } | Select-Object -First 1
+    if ($planPremiumColumn.SortMemberPath -ne 'PremiumSortOrder') {
+        throw 'The dust-plan Premium column does not use the Diamond-to-Normal sort order.'
+    }
+    $protectedGrid = $window.FindName('ProtectedGrid')
+    $protectedNameColumn = $protectedGrid.Columns | Where-Object { $_.Header -eq 'Name' } | Select-Object -First 1
+    $protectedClassColumn = $protectedGrid.Columns | Where-Object { $_.Header -eq 'Class' } | Select-Object -First 1
+    $protectedReasonColumn = $protectedGrid.Columns | Where-Object { $_.Header -eq 'Reason' } | Select-Object -First 1
+	$protectedPremiumColumn = $protectedGrid.Columns | Where-Object { $_.Header -eq 'Premium' } | Select-Object -First 1
+	$protectedRarityColumn = $protectedGrid.Columns | Where-Object { $_.Header -eq 'Rarity' } | Select-Object -First 1
+    if ($null -eq $protectedGrid -or
+		$null -eq $protectedRarityColumn -or
+        $protectedNameColumn.Width.Value -gt 500 -or
+        $protectedClassColumn.Width.Value -lt 400 -or
+		$protectedReasonColumn.Width.UnitType.ToString() -ne 'Star' -or
+		$protectedPremiumColumn.SortMemberPath -ne 'PremiumSortOrder') {
+        throw 'The protected-card columns are not balanced for class and reason text.'
+    }
+    foreach ($filterName in @(
+        'ProtectedExpansionFilter',
+        'ProtectedRarityFilter',
+        'ProtectedClassFilter',
+        'ProtectedFormatFilter',
+        'ProtectedPremiumFilter',
+        'ProtectionReasonFilter')) {
+        $filter = $window.FindName($filterName)
+        if ($null -eq $filter -or [int]$filter.ReadLocalValue([System.Windows.Controls.Primitives.Selector]::SelectedIndexProperty) -ne 0) {
+            throw "The $filterName protected-card filter does not default to All."
+        }
+    }
     $window.Close()
-    Write-Output "Verified HDT plugin type $($type.FullName), version $($instance.Version), and WPF window construction."
+    Write-Output "Verified HDT plugin type $($type.FullName), version $($instance.Version), Collection and planner filters, extended selection, protected rarity, and manual uncraftable reporting controls."
 }
 finally {
     [AppDomain]::CurrentDomain.remove_AssemblyResolve($resolver)
