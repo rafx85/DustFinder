@@ -109,7 +109,9 @@ try {
             throw "The $filterName dropdown does not visibly default to All."
         }
     }
-    if ($null -eq $window.FindName('MarkUncraftableButton') -or
+	if ($null -eq $window.FindName('UpdateCheckButton') -or
+		$null -eq $window.FindName('UpdateStatusText') -or
+		$null -eq $window.FindName('MarkUncraftableButton') -or
 		$null -eq $window.FindName('CopyCardNameButton') -or
 		$null -eq $window.FindName('CopyPlanCardNameButton') -or
 		$null -eq $window.FindName('PlannerCriteriaText') -or
@@ -159,8 +161,10 @@ try {
 			$mainViewModelSource -notmatch 'PastedDeckUsage\.NormalizeDeckList' -or
 			$mainViewModelSource -notmatch 'last-collection\.json' -or
 			$mainViewModelSource -notmatch 'LoadCachedCollection' -or
-			$mainViewModelSource -notmatch 'SaveCollectionCache') {
-			throw 'Planner constraints, deck identity checks, or offline collection caching are not wired into the view model.'
+			$mainViewModelSource -notmatch 'SaveCollectionCache' -or
+			$mainViewModelSource -notmatch 'CheckForUpdatesAsync' -or
+			$mainViewModelSource -notmatch 'GitHubUpdateService') {
+			throw 'Planner constraints, deck identity checks, offline caching, or GitHub update checks are not wired into the view model.'
 		}
 	}
     if ($null -eq $window.FindName('CollectionCountText') -or $null -eq $window.FindName('ProtectedCountText')) {
@@ -215,7 +219,7 @@ try {
         }
     }
     $window.Close()
-    Write-Output "Verified HDT plugin type $($type.FullName), visible version $($viewModel.PluginVersion), responsive layouts, constrained planning, offline collection caching, and copy/reporting controls."
+    Write-Output "Verified HDT plugin type $($type.FullName), visible version $($viewModel.PluginVersion), responsive layouts, constrained planning, offline caching, GitHub update controls, and copy/reporting controls."
 }
 finally {
     [AppDomain]::CurrentDomain.remove_AssemblyResolve($resolver)

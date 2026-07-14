@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -24,6 +25,7 @@ public sealed class MainViewModel : BindableBase
 	private readonly SnapshotComparer _snapshotComparer = new();
 	private readonly AtomicJsonStore<UserSettings> _settingsStore = new();
 	private readonly AtomicJsonStore<CollectionSnapshot> _collectionCacheStore = new();
+	private readonly GitHubUpdateService _updateService = new();
 	private readonly SnapshotRepository _snapshots;
 	private readonly string _settingsPath;
 	private readonly string _collectionCachePath;
@@ -61,6 +63,10 @@ public sealed class MainViewModel : BindableBase
 	private int _targetDust = 1600;
 	private int _plannedDust;
 	private bool _isBusy;
+	private bool _isCheckingUpdates;
+	private PluginUpdateCheckResult? _availableUpdate;
+	private string _updateStatus = "Updates are checked automatically when DustFinder opens.";
+	private string _updateActionText = "Check updates";
 
 	public MainViewModel(IHdtCollectionSource source, string dataDirectory)
 	{
@@ -124,6 +130,7 @@ public sealed class MainViewModel : BindableBase
 		ImportPastedDeckCommand = new RelayCommand(ImportPastedDeck, () => !string.IsNullOrWhiteSpace(PastedDeckText));
 		RemovePastedDeckCommand = new RelayCommand(RemoveSelectedPastedDeck, () => SelectedPastedDeck != null);
 		SaveSettingsCommand = new RelayCommand(SaveSettings);
+		UpdateCommand = new RelayCommand(UpdateOrCheck, () => !IsCheckingUpdates);
 		LoadCachedCollection();
 	}
 
@@ -169,6 +176,7 @@ public sealed class MainViewModel : BindableBase
 	public RelayCommand ImportPastedDeckCommand { get; }
 	public RelayCommand RemovePastedDeckCommand { get; }
 	public RelayCommand SaveSettingsCommand { get; }
+	public RelayCommand UpdateCommand { get; }
 
 	public string PastedDeckText
 	{
@@ -360,6 +368,17 @@ public sealed class MainViewModel : BindableBase
 	public int RemainingDust => Math.Max(0, TargetDust - PlannedDust);
 	public string StatusMessage { get => _statusMessage; private set => Set(ref _statusMessage, value); }
 	public string AccountLabel { get => _accountLabel; private set => Set(ref _accountLabel, value); }
+	public string UpdateStatus { get => _updateStatus; private set => Set(ref _updateStatus, value); }
+	public string UpdateActionText { get => _updateActionText; private set => Set(ref _updateActionText, value); }
+	public bool IsCheckingUpdates
+	{
+		get => _isCheckingUpdates;
+		private set
+		{
+			if(!Set(ref _isCheckingUpdates, value)) return;
+			UpdateCommand.RaiseCanExecuteChanged();
+		}
+	}
 	public bool IsBusy
 	{
 		get => _isBusy;
@@ -398,6 +417,71 @@ public sealed class MainViewModel : BindableBase
 			IsBusy = false;
 		}
 	}
+
+	public async Task CheckForUpdatesAsync()
+	{
+		if(IsCheckingUpdates)
+			return;
+		IsCheckingUpdates = true;
+		UpdateStatus = "Checking GitHub for a newer DustFinder release...";
+		try
+		{
+			var result = await _updateService.CheckAsync(PluginVersionInfo.Current);
+			_availableUpdate = result.HasPublishedRelease
+				&& result.LatestVersion!.CompareTo(PluginVersionInfo.Current) > 0
+				? result
+				: null;
+			if(_availableUpdate?.LatestVersion != null)
+			{
+				var version = FormatVersion(_availableUpdate.LatestVersion);
+				UpdateStatus = $"DustFinder v{version} is available.";
+				UpdateActionText = $"Download v{version}";
+			}
+			else if(result.LatestVersion != null)
+			{
+				UpdateStatus = $"{PluginVersion} is the latest published version.";
+				UpdateActionText = "Check updates";
+			}
+			else
+			{
+				UpdateStatus = "No published DustFinder release is available yet.";
+				UpdateActionText = "Check updates";
+			}
+		}
+		catch(Exception ex)
+		{
+			_availableUpdate = null;
+			UpdateStatus = $"Could not check for updates: {ex.Message}";
+			UpdateActionText = "Retry update check";
+		}
+		finally
+		{
+			IsCheckingUpdates = false;
+		}
+	}
+
+	private void UpdateOrCheck()
+	{
+		if(_availableUpdate == null || string.IsNullOrWhiteSpace(_availableUpdate.DownloadUrl))
+		{
+			_ = CheckForUpdatesAsync();
+			return;
+		}
+		try
+		{
+			Process.Start(new ProcessStartInfo(_availableUpdate.DownloadUrl) { UseShellExecute = true });
+			UpdateStatus = "The update ZIP was opened in your browser. Install it through HDT Plugins, then restart HDT.";
+		}
+		catch(Exception ex)
+		{
+			UpdateStatus = $"Could not open the update download: {ex.Message}";
+		}
+	}
+
+	private static string FormatVersion(Version version) =>
+		version.Revision > 0
+			? $"{version.Major}.{version.Minor}.{Math.Max(version.Build, 0)}.{version.Revision}"
+			: $"{version.Major}.{version.Minor}.{Math.Max(version.Build, 0)}";
 
 	private void LoadCachedCollection()
 	{

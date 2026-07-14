@@ -82,8 +82,12 @@
 
         <Border Grid.Row="0" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
             <DockPanel>
-                <Button DockPanel.Dock="Right" Content="Refresh collection" Command="{Binding RefreshCommand}"
-                        ToolTip="Asks HDT to read the collection for the Hearthstone account that is currently signed in." />
+				<StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+					<Button x:Name="UpdateCheckButton" Content="{Binding UpdateActionText}" Command="{Binding UpdateCommand}"
+							ToolTip="Check the latest GitHub Release, or download its versioned DustFinder ZIP when an update is available." />
+					<Button Content="Refresh collection" Command="{Binding RefreshCommand}"
+							ToolTip="Asks HDT to read the collection for the Hearthstone account that is currently signed in." />
+				</StackPanel>
 				<StackPanel>
 					<StackPanel Orientation="Horizontal">
 						<TextBlock Text="DustFinder" FontSize="24" FontWeight="SemiBold" />
@@ -91,6 +95,8 @@
 								   Foreground="#AEB5C2" Margin="8,0,0,3" VerticalAlignment="Bottom" />
 					</StackPanel>
 					<TextBlock Text="{Binding AccountLabel}" Foreground="#AEB5C2" Margin="0,3,0,0" />
+					<TextBlock x:Name="UpdateStatusText" Text="{Binding UpdateStatus}" Foreground="#8FC7FF"
+							   TextWrapping="Wrap" Margin="0,3,0,0" />
 				</StackPanel>
             </DockPanel>
         </Border>

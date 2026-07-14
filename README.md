@@ -48,10 +48,10 @@ dotnet test .\tests\DustFinder.Core.Tests\DustFinder.Core.Tests.csproj
 ## Create a release ZIP
 
 ```powershell
-.\scripts\package.ps1 -Version 0.1.7
+.\scripts\package.ps1 -Version 0.1.8
 ```
 
-The version is stamped into the plugin DLL and shown beside the DustFinder name in the plugin window. The result is `dist\DustFinder-0.1.7.zip` with this HDT-compatible layout:
+The version is stamped into the plugin DLL and shown beside the DustFinder name in the plugin window. The result is `dist\DustFinder-0.1.8.zip` with this HDT-compatible layout:
 
 ```text
 DustFinder/
@@ -64,12 +64,16 @@ No HDT, HearthMirror, HearthDb, MahApps, or Newtonsoft binaries are bundled.
 ## Install in HDT
 
 1. In HDT, open `Options > Tracker > Plugins`.
-2. Drag `DustFinder-0.1.7.zip` into the plugin list, or extract its `DustFinder` folder under `%APPDATA%\HearthstoneDeckTracker\Plugins`.
+2. Drag `DustFinder-0.1.8.zip` into the plugin list, or extract its `DustFinder` folder under `%APPDATA%\HearthstoneDeckTracker\Plugins`.
 3. Restart HDT if requested and enable DustFinder.
 4. Click `Open DustFinder` or use the `Plugins > DustFinder` menu.
 5. Start Hearthstone, sign in, open My Collection, and click `Refresh collection`.
 
 Plugin-owned data is stored under `%APPDATA%\HearthstoneDeckTracker\DustFinder`. DustFinder keeps the last successfully read collection there so cards, planner choices, protected cards, and expansion settings remain available while Hearthstone is closed. HDT collection-change events replace that cache after My Collection reports updated data.
+
+## Updates
+
+DustFinder checks the repository's latest published GitHub Release when its window opens. Use `Check updates` to check again manually. When a newer versioned ZIP is available, the button changes to `Download v...` and opens that exact release asset; install it through HDT's Plugins page and restart HDT. Update-check failures never block collection or planner features.
 
 ## Development layout
 
@@ -93,4 +97,4 @@ scripts/                   build, official-HDT resolver, packaging, verification
 
 ## CI
 
-GitHub Actions runs on Windows, downloads the pinned official HDT `v1.53.8` release package without committing it, builds the plugin, runs tests, creates the release ZIP, and uploads it as an artifact.
+GitHub Actions runs on Windows, downloads the pinned official HDT `v1.53.8` release package without committing it, builds the plugin, runs tests, creates the release ZIP, and uploads it as an artifact. A successful push to `main` also publishes the ZIP as the versioned latest GitHub Release. Increment the plugin version for every published package.

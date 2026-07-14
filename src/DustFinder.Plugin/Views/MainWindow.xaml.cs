@@ -30,6 +30,7 @@ public partial class MainWindow : Window
 		Loaded += async (_, _) =>
 		{
 			ApplyResponsiveLayout();
+			_ = viewModel.CheckForUpdatesAsync();
 			await viewModel.RefreshAsync();
 			EnsureFilterDefaults();
 		};

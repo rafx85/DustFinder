@@ -8,7 +8,7 @@ jobs:
   build-test-package:
     runs-on: windows-latest
     permissions:
-      contents: read
+      contents: write
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -48,3 +48,18 @@ jobs:
           name: DustFinder-${{ steps.plugin_version.outputs.version }}
           path: dist/DustFinder-${{ steps.plugin_version.outputs.version }}.zip
           if-no-files-found: error
+      - name: Publish versioned GitHub release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: powershell
+        run: |
+          $version = '${{ steps.plugin_version.outputs.version }}'
+          $tag = "v$version"
+          $asset = "dist/DustFinder-$version.zip"
+          gh release view $tag --repo '${{ github.repository }}' *> $null
+          if ($LASTEXITCODE -eq 0) {
+            throw "GitHub Release $tag already exists. Increment the plugin version before publishing another package."
+          }
+          gh release create $tag $asset --repo '${{ github.repository }}' --target '${{ github.sha }}' --title "DustFinder $tag" --generate-notes --latest
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to publish GitHub Release $tag."
+          }
