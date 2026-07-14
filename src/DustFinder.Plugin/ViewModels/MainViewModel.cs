@@ -431,8 +431,15 @@ public sealed class MainViewModel : BindableBase
 
 	private void RefreshExpansionProtectionOptions(IEnumerable<CollectionEntry> entries)
 	{
-		var expansions = entries
-			.Where(x => x.Count > 0 && !string.IsNullOrWhiteSpace(x.Card.Expansion))
+		var entryList = entries.ToList();
+		var fullyProtectedExpansions = ExpansionProtectionInference.GetFullyProtectedExpansions(
+			entryList,
+			Settings.ProtectedCardIds);
+		var expansions = entryList
+			.Where(x => x.Count > 0
+				&& x.Card.IsCollectible
+				&& x.Card.IsCraftableByMetadata
+				&& !string.IsNullOrWhiteSpace(x.Card.Expansion))
 			.Select(x => new
 			{
 				Key = x.Card.Expansion.Trim(),
@@ -452,6 +459,7 @@ public sealed class MainViewModel : BindableBase
 				Key = expansion.Key,
 				Name = expansion.Name,
 				IsProtected = Settings.ProtectedExpansions.Contains(expansion.Key)
+					|| fullyProtectedExpansions.Contains(expansion.Key)
 			});
 		}
 	}
