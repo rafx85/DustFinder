@@ -7,6 +7,12 @@ namespace DustFinder.Core;
 
 public static class CardSetNames
 {
+	private static readonly IReadOnlyDictionary<string, string> CanonicalCodes =
+		new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+		{
+			["EXPERT1"] = "LEGACY"
+		};
+
 	private static readonly IReadOnlyDictionary<string, string> DisplayNames =
 		new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 		{
@@ -71,6 +77,17 @@ public static class CardSetNames
 
 		var words = normalized.Split(new[] { '_', '-' }, StringSplitOptions.RemoveEmptyEntries);
 		return string.Join(" ", words.Select(FormatWord));
+	}
+
+	public static string GetCanonicalCode(string? setCode)
+	{
+		if(string.IsNullOrWhiteSpace(setCode))
+			return string.Empty;
+
+		var normalized = setCode!.Trim();
+		return CanonicalCodes.TryGetValue(normalized, out var canonicalCode)
+			? canonicalCode
+			: normalized;
 	}
 
 	private static string FormatWord(string word)

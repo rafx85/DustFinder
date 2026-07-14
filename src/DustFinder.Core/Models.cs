@@ -112,8 +112,15 @@ public sealed class UserSettings
 		_ => false
 	};
 
-	public bool IsExpansionProtected(string? expansion) => !string.IsNullOrWhiteSpace(expansion)
-		&& ProtectedExpansions?.Contains(expansion!) == true;
+	public bool IsExpansionProtected(string? expansion)
+	{
+		var canonicalExpansion = CardSetNames.GetCanonicalCode(expansion);
+		return canonicalExpansion.Length > 0
+			&& ProtectedExpansions?.Any(x => string.Equals(
+				CardSetNames.GetCanonicalCode(x),
+				canonicalExpansion,
+				StringComparison.OrdinalIgnoreCase)) == true;
+	}
 }
 
 [DataContract]

@@ -30,4 +30,12 @@ public sealed class CardSetNamesTests
 	{
 		Assert.Equal("Unknown", CardSetNames.GetDisplayName(setCode));
 	}
+
+	[Theory]
+	[InlineData("EXPERT1", "LEGACY")]
+	[InlineData(" legacy ", "legacy")]
+	public void GetCanonicalCode_MergesEquivalentSetCodes(string setCode, string expected)
+	{
+		Assert.Equal(expected, CardSetNames.GetCanonicalCode(setCode));
+	}
 }

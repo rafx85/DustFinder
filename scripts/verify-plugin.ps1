@@ -78,6 +78,34 @@ try {
     if ($null -eq $window.FindName('ExpansionProtectionList')) {
         throw 'The Settings expansion-protection checklist was not found.'
     }
+    foreach ($previewName in @('CollectionCardPreview', 'PlanCardPreview', 'ProtectedCardPreview')) {
+        if ($null -eq $window.FindName($previewName)) {
+            throw "The $previewName HDT card-art preview was not found."
+        }
+    }
+	$bindableCardImageType = $assembly.GetType('DustFinder.Plugin.Controls.BindableCardImage', $true)
+	$boundCardIdField = $bindableCardImageType.GetField('BoundCardIdProperty', [Reflection.BindingFlags]'Public,Static')
+	if ($null -eq $boundCardIdField -or
+		-not [System.Windows.DependencyProperty].IsAssignableFrom($boundCardIdField.FieldType) -or
+		-not [System.Windows.Controls.ContentControl].IsAssignableFrom($bindableCardImageType)) {
+		throw 'The bindable HDT CardImage adapter is not backed by a dependency property and containment control.'
+	}
+	$previewXamlPath = Join-Path $PSScriptRoot '..\src\DustFinder.Plugin\Views\MainWindow.xaml'
+	$previewAdapterPath = Join-Path $PSScriptRoot '..\src\DustFinder.Plugin\Controls\BindableCardImage.cs'
+	if (Test-Path -LiteralPath $previewXamlPath) {
+		$previewXaml = Get-Content -LiteralPath $previewXamlPath -Raw
+		if ($previewXaml -notmatch 'BindableCardImage\s+BoundCardId="\{Binding CardId\}"' -or
+			$previewXaml -match '<[^>]*CardImage\s+CardId="\{Binding') {
+			throw 'The card preview must bind through BindableCardImage.BoundCardId, not HDT CardImage.CardId directly.'
+		}
+	}
+	if (Test-Path -LiteralPath $previewAdapterPath) {
+		$previewAdapter = Get-Content -LiteralPath $previewAdapterPath -Raw
+		if ($previewAdapter -notmatch 'Cards\.All\.TryGetValue' -or
+			$previewAdapter -notmatch 'SetCardIdFromCard') {
+			throw 'The card preview adapter is not resolving HearthDb cards through HDT cached-asset loading.'
+		}
+	}
     if ($null -eq $window.FindName('CollectionCountText') -or $null -eq $window.FindName('ProtectedCountText')) {
         throw 'The filtered and total card counters were not found.'
     }

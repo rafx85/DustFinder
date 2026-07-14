@@ -9,16 +9,14 @@ public sealed class ExpansionProtectionInferenceTests
 	[Fact]
 	public void ExpansionIsInferredWhenEveryEligibleOwnedCardIsProtected()
 	{
-		var entries = new[]
+		var results = new[]
 		{
-			Entry("CARD_1", "CATACLYSM"),
-			Entry("CARD_2", "CATACLYSM"),
-			Entry("OTHER", "TIME_TRAVEL")
+			Result("CARD_1", "CATACLYSM", isProtected: true),
+			Result("CARD_2", "CATACLYSM", isProtected: true),
+			Result("OTHER", "TIME_TRAVEL", isProtected: false)
 		};
 
-		var inferred = ExpansionProtectionInference.GetFullyProtectedExpansions(
-			entries,
-			new[] { "CARD_1", "CARD_2" });
+		var inferred = ExpansionProtectionInference.GetFullyProtectedExpansions(results);
 
 		Assert.Contains("CATACLYSM", inferred);
 		Assert.DoesNotContain("TIME_TRAVEL", inferred);
@@ -28,35 +26,52 @@ public sealed class ExpansionProtectionInferenceTests
 	public void ExpansionIsNotInferredWhenOneEligibleOwnedCardIsUnprotected()
 	{
 		var inferred = ExpansionProtectionInference.GetFullyProtectedExpansions(
-			new[] { Entry("CARD_1", "CATACLYSM"), Entry("CARD_2", "CATACLYSM") },
-			new[] { "CARD_1" });
+			new[] { Result("CARD_1", "CATACLYSM", true), Result("CARD_2", "CATACLYSM", false) });
 
 		Assert.DoesNotContain("CATACLYSM", inferred);
 	}
 
 	[Fact]
-	public void UncraftableCardDoesNotBlockInference()
+	public void KeptCopyDoesNotBlockInference()
 	{
-		var uncraftable = Entry("FREE_CARD", "CATACLYSM");
-		uncraftable.Card.IsCraftableByMetadata = false;
+		var kept = Result("KEPT_CARD", "CATACLYSM", false);
+		kept.ReservedCopies = kept.Entry.Count;
 
 		var inferred = ExpansionProtectionInference.GetFullyProtectedExpansions(
-			new[] { Entry("CARD_1", "CATACLYSM"), uncraftable },
-			new[] { "CARD_1" });
+			new[] { Result("CARD_1", "CATACLYSM", true), kept });
 
 		Assert.Contains("CATACLYSM", inferred);
 	}
 
-	private static CollectionEntry Entry(string cardId, string expansion) => new()
+	[Fact]
+	public void OtherProtectionSourcesCountAsProtected()
 	{
-		Count = 1,
-		Premium = PremiumType.Normal,
-		Card = new CardMetadata
+		var pastedDeck = Result("CARD_1", "CATACLYSM", false);
+		pastedDeck.IsInPastedDeck = true;
+		var premiumRule = Result("CARD_2", "CATACLYSM", false);
+		premiumRule.IsPremiumProtected = true;
+
+		var inferred = ExpansionProtectionInference.GetFullyProtectedExpansions(
+			new[] { pastedDeck, premiumRule });
+
+		Assert.Contains("CATACLYSM", inferred);
+	}
+
+	private static AnalysisResult Result(string cardId, string expansion, bool isProtected) => new()
+	{
+		IsProtected = isProtected,
+		IsDisenchantable = true,
+		Entry = new CollectionEntry
 		{
-			CardId = cardId,
-			Expansion = expansion,
-			IsCollectible = true,
-			IsCraftableByMetadata = true
+			Count = 1,
+			Premium = PremiumType.Normal,
+			Card = new CardMetadata
+			{
+				CardId = cardId,
+				Expansion = expansion,
+				IsCollectible = true,
+				IsCraftableByMetadata = true
+			}
 		}
 	};
 }

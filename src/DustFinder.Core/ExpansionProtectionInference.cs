@@ -7,32 +7,24 @@ namespace DustFinder.Core;
 public static class ExpansionProtectionInference
 {
 	public static ISet<string> GetFullyProtectedExpansions(
-		IEnumerable<CollectionEntry> entries,
-		IEnumerable<string> protectedCardIds)
+		IEnumerable<AnalysisResult> results)
 	{
-		if(entries == null)
-			throw new ArgumentNullException(nameof(entries));
-		if(protectedCardIds == null)
-			throw new ArgumentNullException(nameof(protectedCardIds));
+		if(results == null)
+			throw new ArgumentNullException(nameof(results));
 
-		var protectedIds = new HashSet<string>(
-			protectedCardIds.Where(x => !string.IsNullOrWhiteSpace(x)),
-			StringComparer.OrdinalIgnoreCase);
-
-		return new HashSet<string>(entries
-			.Where(x => x.Count > 0
-				&& x.Card.IsCollectible
-				&& x.Card.IsCraftableByMetadata
-				&& !string.IsNullOrWhiteSpace(x.Card.Expansion)
-				&& !string.IsNullOrWhiteSpace(x.Card.CardId))
-			.GroupBy(x => x.Card.Expansion.Trim(), StringComparer.OrdinalIgnoreCase)
+		return new HashSet<string>(results
+			.Where(x => x.IsDisenchantable
+				&& x.Entry.Count > x.ReservedCopies
+				&& !string.IsNullOrWhiteSpace(x.Entry.Card.Expansion))
+			.GroupBy(x => x.Entry.Card.Expansion.Trim(), StringComparer.OrdinalIgnoreCase)
 			.Where(group =>
 			{
-				var cardIds = group
-					.Select(x => x.Card.CardId)
-					.Distinct(StringComparer.OrdinalIgnoreCase)
-					.ToList();
-				return cardIds.Count > 0 && cardIds.All(protectedIds.Contains);
+				var variants = group.ToList();
+				return variants.Count > 0 && variants.All(x =>
+					x.IsProtected
+					|| x.IsInPastedDeck
+					|| x.IsPremiumProtected
+					|| x.IsExpansionProtected);
 			})
 			.Select(group => group.Key),
 			StringComparer.OrdinalIgnoreCase);

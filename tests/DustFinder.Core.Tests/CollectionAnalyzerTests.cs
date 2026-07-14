@@ -113,6 +113,22 @@ public sealed class CollectionAnalyzerTests
 	}
 
 	[Fact]
+	public void LegacyProtectionAlsoCoversExpert1Alias()
+	{
+		var settings = UnprotectedSettings();
+		settings.ProtectedExpansions.Add("LEGACY");
+		var entry = Entry(PremiumType.Normal, 2);
+		entry.Card.Expansion = "EXPERT1";
+		var result = _analyzer.Analyze(
+			new[] { entry },
+			new Dictionary<int, int>(),
+			settings).Single();
+
+		Assert.True(result.IsExpansionProtected);
+		Assert.Equal(0, result.RecommendedCopies);
+	}
+
+	[Fact]
 	public void CardInPastedDeckHasNoRecommendationsAcrossVariants()
 	{
 		var results = _analyzer.Analyze(

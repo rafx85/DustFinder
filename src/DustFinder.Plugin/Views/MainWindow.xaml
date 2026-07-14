@@ -1,6 +1,7 @@
 <Window x:Class="DustFinder.Plugin.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:controls="clr-namespace:DustFinder.Plugin.Controls"
         Title="DustFinder · Collection and dust planner"
         Width="1280" Height="820" MinWidth="920" MinHeight="620"
         WindowStartupLocation="CenterScreen"
@@ -9,6 +10,16 @@
         <SolidColorBrush x:Key="PanelBrush" Color="#20232A" />
         <SolidColorBrush x:Key="BorderBrush" Color="#343944" />
         <SolidColorBrush x:Key="AccentBrush" Color="#4DA3FF" />
+		<DataTemplate x:Key="CardPreviewTemplate">
+			<StackPanel HorizontalAlignment="Center">
+				<TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" TextAlignment="Center"
+						   TextWrapping="Wrap" Margin="6,8,6,4" />
+				<controls:BindableCardImage BoundCardId="{Binding CardId}" Width="220" Height="310"
+									HorizontalAlignment="Center" />
+				<TextBlock Text="{Binding Expansion}" Foreground="#AEB5C2" TextAlignment="Center"
+						   TextWrapping="Wrap" Margin="6,4,6,8" />
+			</StackPanel>
+		</DataTemplate>
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="#E8EAF0" />
         </Style>
@@ -117,7 +128,12 @@
                             <ComboBox Width="120" ItemsSource="{Binding Premiums}" SelectedItem="{Binding SelectedPremium}" ToolTip="Normal, Golden, Signature, or Diamond" />
                         </StackPanel>
                     </WrapPanel>
-                    <DataGrid x:Name="CollectionGrid" Grid.Row="1" ItemsSource="{Binding CardsView}"
+					<Grid Grid.Row="1">
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="*" />
+							<ColumnDefinition Width="Auto" />
+						</Grid.ColumnDefinitions>
+                    <DataGrid x:Name="CollectionGrid" Grid.Column="0" ItemsSource="{Binding CardsView}"
                               SelectedItem="{Binding SelectedCard}" AlternationCount="2"
                               SelectionMode="Extended" SelectionUnit="FullRow"
 							  SelectionChanged="CollectionGrid_OnSelectionChanged"
@@ -138,6 +154,11 @@
                             <DataGridTextColumn Header="Assessment" Binding="{Binding Safety}" Width="190" />
                         </DataGrid.Columns>
                     </DataGrid>
+						<Border x:Name="CollectionCardPreview" Grid.Column="1" Width="245" Margin="8,0,0,0"
+								Background="#171A20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+							<ContentControl Content="{Binding SelectedCard}" ContentTemplate="{StaticResource CardPreviewTemplate}" />
+						</Border>
+					</Grid>
                     <DockPanel Grid.Row="2" Margin="0,6,0,0">
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
 							<Button x:Name="CopyCardNameButton" Content="Copy name" Command="{Binding CopyNameCommand}"
@@ -208,7 +229,12 @@
 									  SelectedItem="{Binding SelectedPlannerPremium, Mode=TwoWay}" SelectedIndex="0" />
 						</StackPanel>
 					</WrapPanel>
-                    <DataGrid x:Name="PlanGrid" Grid.Row="2" ItemsSource="{Binding PlanRowsView}" SelectedItem="{Binding SelectedPlanRow}"
+					<Grid Grid.Row="2">
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="*" />
+							<ColumnDefinition Width="Auto" />
+						</Grid.ColumnDefinitions>
+                    <DataGrid x:Name="PlanGrid" Grid.Column="0" ItemsSource="{Binding PlanRowsView}" SelectedItem="{Binding SelectedPlanRow}"
 							  AlternationCount="2" SelectionMode="Extended" SelectionUnit="FullRow"
 							  SelectionChanged="PlanGrid_OnSelectionChanged" Sorting="DataGrid_OnSorting">
                         <DataGrid.Columns>
@@ -229,6 +255,11 @@
 							<DataGridTextColumn Header="Plan dust" Binding="{Binding Total}" Width="80" />
                         </DataGrid.Columns>
                     </DataGrid>
+						<Border x:Name="PlanCardPreview" Grid.Column="1" Width="245" Margin="8,0,0,0"
+								Background="#171A20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+							<ContentControl Content="{Binding SelectedPlanRow}" ContentTemplate="{StaticResource CardPreviewTemplate}" />
+						</Border>
+					</Grid>
                     <DockPanel Grid.Row="3" Margin="0,6,0,0">
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
 							<Button Content="Protect selected" Command="{Binding ProtectPlanCommand}"
@@ -322,7 +353,12 @@
 									  SelectedItem="{Binding SelectedProtectionReason, Mode=TwoWay}" SelectedIndex="0" />
 						</StackPanel>
 					</WrapPanel>
-					<DataGrid x:Name="ProtectedGrid" Grid.Row="1" ItemsSource="{Binding ProtectedCardsView}" SelectedItem="{Binding SelectedProtectedCard}"
+					<Grid Grid.Row="1">
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="*" />
+							<ColumnDefinition Width="Auto" />
+						</Grid.ColumnDefinitions>
+					<DataGrid x:Name="ProtectedGrid" Grid.Column="0" ItemsSource="{Binding ProtectedCardsView}" SelectedItem="{Binding SelectedProtectedCard}"
 							  AlternationCount="2" Sorting="DataGrid_OnSorting">
                         <DataGrid.Columns>
 							<DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="480" />
@@ -333,6 +369,11 @@
 							<DataGridTextColumn Header="Reason" Binding="{Binding ProtectionReason}" Width="*" MinWidth="300" />
                         </DataGrid.Columns>
                     </DataGrid>
+						<Border x:Name="ProtectedCardPreview" Grid.Column="1" Width="245" Margin="8,0,0,0"
+								Background="#171A20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+							<ContentControl Content="{Binding SelectedProtectedCard}" ContentTemplate="{StaticResource CardPreviewTemplate}" />
+						</Border>
+					</Grid>
 					<DockPanel Grid.Row="2" Margin="0,6,0,0">
                         <Button DockPanel.Dock="Right" Content="Remove protection" Command="{Binding UnprotectCommand}" />
 						<StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -411,10 +452,10 @@
 					<TextBlock Text="Which expansions should be protected completely?" Margin="0,16,0,5"
 							   ToolTip="Every owned card from a checked expansion is hidden from Collection and dust recommendations." />
 					<Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="8" Background="#171A20">
-						<ItemsControl x:Name="ExpansionProtectionList" ItemsSource="{Binding ExpansionProtectionOptions}">
+						<ItemsControl x:Name="ExpansionProtectionList" Height="250" ItemsSource="{Binding ExpansionProtectionOptions}">
 							<ItemsControl.ItemsPanel>
 								<ItemsPanelTemplate>
-									<WrapPanel />
+									<WrapPanel Orientation="Vertical" />
 								</ItemsPanelTemplate>
 							</ItemsControl.ItemsPanel>
 							<ItemsControl.ItemTemplate>

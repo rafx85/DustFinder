@@ -88,6 +88,7 @@ public sealed class PlanRowViewModel
 {
 	public CardRowViewModel Card { get; set; } = null!;
 	public string Key => Card.Key;
+	public string CardId => Card.CardId;
 	public string Name => Card.Name;
 	public string Expansion => Card.Expansion;
 	public CardRarity Rarity => Card.Rarity;

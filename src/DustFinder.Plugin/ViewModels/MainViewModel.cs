@@ -77,7 +77,9 @@ public sealed class MainViewModel : BindableBase
 		Settings.SchemaVersion = 5;
 		Settings.ProtectedCardIds ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 		Settings.ProtectedExpansions = new HashSet<string>(
-			Settings.ProtectedExpansions ?? new HashSet<string>(),
+			(Settings.ProtectedExpansions ?? new HashSet<string>())
+				.Select(CardSetNames.GetCanonicalCode)
+				.Where(x => x.Length > 0),
 			StringComparer.OrdinalIgnoreCase);
 		Settings.PastedDecks ??= new List<PastedDeckDefinition>();
 		Settings.ManualUncraftableCards ??= new List<ManualUncraftableCard>();
@@ -383,8 +385,8 @@ public sealed class MainViewModel : BindableBase
 		var maximumDeckCopies = PastedDeckUsage.MergeMaximumCopies(
 			new Dictionary<int, int>(),
 			PastedDecks);
-		RefreshExpansionProtectionOptions(_lastLoad.Entries);
 		var results = _analyzer.Analyze(_lastLoad.Entries, maximumDeckCopies, Settings, pastedDeckCards);
+		RefreshExpansionProtectionOptions(_lastLoad.Entries, results);
 		var ownedRows = results
 			.Where(x => x.Entry.Count > 0)
 			.Select(x => new CardRowViewModel(x))
@@ -429,12 +431,15 @@ public sealed class MainViewModel : BindableBase
 		Raise(nameof(SelectedPlannerClass));
 	}
 
-	private void RefreshExpansionProtectionOptions(IEnumerable<CollectionEntry> entries)
+	private void RefreshExpansionProtectionOptions(
+		IEnumerable<CollectionEntry> entries,
+		IEnumerable<AnalysisResult> results)
 	{
 		var entryList = entries.ToList();
-		var fullyProtectedExpansions = ExpansionProtectionInference.GetFullyProtectedExpansions(
-			entryList,
-			Settings.ProtectedCardIds);
+		var fullyProtectedExpansions = new HashSet<string>(
+			ExpansionProtectionInference.GetFullyProtectedExpansions(results)
+				.Select(CardSetNames.GetCanonicalCode),
+			StringComparer.OrdinalIgnoreCase);
 		var expansions = entryList
 			.Where(x => x.Count > 0
 				&& x.Card.IsCollectible
@@ -442,8 +447,8 @@ public sealed class MainViewModel : BindableBase
 				&& !string.IsNullOrWhiteSpace(x.Card.Expansion))
 			.Select(x => new
 			{
-				Key = x.Card.Expansion.Trim(),
-				Name = CardSetNames.GetDisplayName(x.Card.Expansion)
+				Key = CardSetNames.GetCanonicalCode(x.Card.Expansion),
+				Name = CardSetNames.GetDisplayName(CardSetNames.GetCanonicalCode(x.Card.Expansion))
 			})
 			.GroupBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
 			.Select(x => x.First())
