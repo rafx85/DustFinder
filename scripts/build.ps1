@@ -28,10 +28,12 @@ if ([string]::IsNullOrWhiteSpace($HdtInstallDir)) {
 }
 
 $hdtPath = [IO.Path]::GetFullPath($HdtInstallDir)
-& dotnet restore (Join-Path $root 'DustFinder.sln') --configfile (Join-Path $root 'NuGet.Config') -p:HdtInstallDir="$hdtPath"
+$version = & (Join-Path $PSScriptRoot 'get-version.ps1')
+$versionArgument = "-p:Version=$version"
+& dotnet restore (Join-Path $root 'DustFinder.sln') --configfile (Join-Path $root 'NuGet.Config') -p:HdtInstallDir="$hdtPath" $versionArgument
 if ($LASTEXITCODE -ne 0) { throw 'dotnet restore failed.' }
-& dotnet build (Join-Path $root 'DustFinder.sln') --no-restore -c $Configuration -p:Platform=x64 -p:HdtInstallDir="$hdtPath"
+& dotnet build (Join-Path $root 'DustFinder.sln') --no-restore -c $Configuration -p:Platform=x64 -p:HdtInstallDir="$hdtPath" $versionArgument
 if ($LASTEXITCODE -ne 0) { throw 'dotnet build failed.' }
-& dotnet test (Join-Path $root 'tests\DustFinder.Core.Tests\DustFinder.Core.Tests.csproj') --no-restore -c $Configuration
+& dotnet test (Join-Path $root 'tests\DustFinder.Core.Tests\DustFinder.Core.Tests.csproj') --no-restore -c $Configuration $versionArgument
 if ($LASTEXITCODE -ne 0) { throw 'dotnet test failed.' }
 Write-Output "Build and tests passed against $hdtPath"

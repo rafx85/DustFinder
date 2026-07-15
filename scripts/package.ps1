@@ -23,18 +23,22 @@ if (Test-Path -LiteralPath $stageRoot) { Remove-Item -LiteralPath $stageRoot -Re
 New-Item -ItemType Directory -Force -Path $pluginRoot, $dist | Out-Null
 $pluginOutput = Join-Path $root 'src\DustFinder.Plugin\bin\x64\Release\net472'
 $pluginAssemblyPath = Join-Path $pluginOutput 'DustFinder.Plugin.dll'
-$actualVersion = [Reflection.AssemblyName]::GetAssemblyName($pluginAssemblyPath).Version
+$coreAssemblyPath = Join-Path $pluginOutput 'DustFinder.Core.dll'
 $requestedVersion = [version]$Version
 $expectedVersion = [version]::new(
     $requestedVersion.Major,
     $requestedVersion.Minor,
     [Math]::Max($requestedVersion.Build, 0),
     [Math]::Max($requestedVersion.Revision, 0))
-if ($actualVersion -ne $expectedVersion) {
-    throw "Built plugin version $actualVersion does not match requested package version $expectedVersion. Re-run without -NoBuild."
+foreach ($assemblyPath in @($pluginAssemblyPath, $coreAssemblyPath)) {
+    $actualVersion = [Reflection.AssemblyName]::GetAssemblyName($assemblyPath).Version
+    if ($actualVersion -ne $expectedVersion) {
+        $assemblyName = [IO.Path]::GetFileName($assemblyPath)
+        throw "Built assembly $assemblyName version $actualVersion does not match requested package version $expectedVersion. Re-run without -NoBuild."
+    }
 }
 Copy-Item -LiteralPath $pluginAssemblyPath -Destination $pluginRoot
-Copy-Item -LiteralPath (Join-Path $pluginOutput 'DustFinder.Core.dll') -Destination $pluginRoot
+Copy-Item -LiteralPath $coreAssemblyPath -Destination $pluginRoot
 
 $zip = Join-Path $dist "DustFinder-$Version.zip"
 if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }

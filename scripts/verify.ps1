@@ -40,16 +40,20 @@ if ($LASTEXITCODE -ne 0) {
     throw 'Plugin contract verification failed.'
 }
 
-$pluginAssemblyPath = Join-Path $root 'src\DustFinder.Plugin\bin\x64\Release\net472\DustFinder.Plugin.dll'
-$actualVersion = [Reflection.AssemblyName]::GetAssemblyName($pluginAssemblyPath).Version
+$assemblyOutput = Join-Path $root 'src\DustFinder.Plugin\bin\x64\Release\net472'
 $requestedVersion = [version]$version
 $expectedVersion = [version]::new(
     $requestedVersion.Major,
     $requestedVersion.Minor,
     [Math]::Max($requestedVersion.Build, 0),
     [Math]::Max($requestedVersion.Revision, 0))
-if ($actualVersion -ne $expectedVersion) {
-    throw "Built plugin version $actualVersion does not match project version $expectedVersion."
+foreach ($assemblyName in @('DustFinder.Plugin.dll', 'DustFinder.Core.dll')) {
+    $assemblyPath = Join-Path $assemblyOutput $assemblyName
+    $actualVersion = [Reflection.AssemblyName]::GetAssemblyName($assemblyPath).Version
+    if ($actualVersion -ne $expectedVersion) {
+        throw "Built assembly $assemblyName version $actualVersion does not match project version $expectedVersion."
+    }
+    Write-Output "Verified $assemblyName version $actualVersion"
 }
 
 $zipPath = Join-Path $root "dist\DustFinder-$version.zip"
