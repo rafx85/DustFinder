@@ -7,7 +7,7 @@ namespace DustFinder.Core.Tests;
 public sealed class PluginUpdateRulesTests
 {
 	[Theory]
-	[InlineData("v0.1.8", 0, 1, 8)]
+	[InlineData("v2.3.4", 2, 3, 4)]
 	[InlineData(" 1.2.3 ", 1, 2, 3)]
 	public void ParsesGitHubReleaseTags(string tag, int major, int minor, int build)
 	{
@@ -27,15 +27,15 @@ public sealed class PluginUpdateRulesTests
 	[Fact]
 	public void DetectsOnlyStrictlyNewerVersions()
 	{
-		var installed = new Version(0, 1, 8, 0);
-		Assert.True(PluginUpdateRules.IsNewer("v0.1.9", installed));
-		Assert.False(PluginUpdateRules.IsNewer("v0.1.8", installed));
-		Assert.False(PluginUpdateRules.IsNewer("v0.1.7", installed));
+		var installed = new Version(2, 3, 4, 0);
+		Assert.True(PluginUpdateRules.IsNewer("v2.3.5", installed));
+		Assert.False(PluginUpdateRules.IsNewer("v2.3.4", installed));
+		Assert.False(PluginUpdateRules.IsNewer("v2.3.3", installed));
 	}
 
 	[Fact]
 	public void BuildsTheExpectedReleaseAssetName()
 	{
-		Assert.Equal("DustFinder-0.1.8.zip", PluginUpdateRules.GetAssetName(new Version(0, 1, 8, 0)));
+		Assert.Equal("DustFinder-2.3.4.zip", PluginUpdateRules.GetAssetName(new Version(2, 3, 4, 0)));
 	}
 }

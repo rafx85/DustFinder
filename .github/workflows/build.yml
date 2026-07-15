@@ -2,6 +2,10 @@ name: build
 
 on:
   push:
+    branches:
+      - main
+    tags:
+      - 'v*'
   pull_request:
 
 jobs:
@@ -25,41 +29,35 @@ jobs:
         id: plugin_version
         shell: powershell
         run: |
-          [xml]$project = Get-Content .\src\DustFinder.Plugin\DustFinder.Plugin.csproj -Raw
-          $version = $project.Project.PropertyGroup |
-            ForEach-Object { $_.Version } |
-            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
-            Select-Object -First 1
-          if ([string]::IsNullOrWhiteSpace($version)) {
-            throw 'DustFinder.Plugin.csproj does not define a Version.'
-          }
+          $version = .\scripts\get-version.ps1
           "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-      - name: Build and test
+      - name: Build, test, package, and verify
         shell: powershell
-        run: .\scripts\build.ps1 -Configuration Release -HdtInstallDir $env:HDT_INSTALL_DIR -Version '${{ steps.plugin_version.outputs.version }}'
-      - name: Package
-        shell: powershell
-        run: .\scripts\package.ps1 -Version '${{ steps.plugin_version.outputs.version }}' -HdtInstallDir $env:HDT_INSTALL_DIR -NoBuild
-      - name: Verify plugin contract
-        shell: powershell
-        run: powershell.exe -NoProfile -Sta -ExecutionPolicy Bypass -File .\scripts\verify-plugin.ps1 -HdtInstallDir $env:HDT_INSTALL_DIR
+        run: .\scripts\verify.ps1 -HdtInstallDir $env:HDT_INSTALL_DIR
       - uses: actions/upload-artifact@v4
         with:
           name: DustFinder-${{ steps.plugin_version.outputs.version }}
           path: dist/DustFinder-${{ steps.plugin_version.outputs.version }}.zip
           if-no-files-found: error
       - name: Publish versioned GitHub release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         shell: powershell
         run: |
           $version = '${{ steps.plugin_version.outputs.version }}'
           $tag = "v$version"
+          $pushedTag = '${{ github.ref_name }}'
           $asset = "dist/DustFinder-$version.zip"
-          gh release view $tag --repo '${{ github.repository }}' *> $null
-          if ($LASTEXITCODE -eq 0) {
-            throw "GitHub Release $tag already exists. Increment the plugin version before publishing another package."
+          if ($pushedTag -ne $tag) {
+            throw "Pushed tag $pushedTag does not match project version $tag."
           }
-          gh release create $tag $asset --repo '${{ github.repository }}' --target '${{ github.sha }}' --title "DustFinder $tag" --generate-notes --latest
+          gh release view $tag --repo '${{ github.repository }}' *> $null
+          $releaseExists = $LASTEXITCODE -eq 0
+          if ($releaseExists) {
+            gh release upload $tag $asset --repo '${{ github.repository }}' --clobber
+          }
+          else {
+            gh release create $tag $asset --repo '${{ github.repository }}' --target '${{ github.sha }}' --title "DustFinder $tag" --generate-notes --latest
+          }
           if ($LASTEXITCODE -ne 0) {
-            throw "Failed to publish GitHub Release $tag."
+            throw "Failed to publish or update GitHub Release $tag."
           }

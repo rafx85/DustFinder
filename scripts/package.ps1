@@ -1,15 +1,14 @@
 [CmdletBinding()]
 param(
-    [ValidatePattern('^\d+\.\d+\.\d+(\.\d+)?$')]
-    [string]$Version = '0.1.8',
     [string]$HdtInstallDir,
     [switch]$NoBuild
 )
 
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$Version = & (Join-Path $PSScriptRoot 'get-version.ps1')
 if (-not $NoBuild) {
-    & (Join-Path $PSScriptRoot 'build.ps1') -Configuration Release -HdtInstallDir $HdtInstallDir -Version $Version
+    & (Join-Path $PSScriptRoot 'build.ps1') -Configuration Release -HdtInstallDir $HdtInstallDir
     if ($LASTEXITCODE -ne 0) { throw 'Build failed before packaging.' }
 }
 

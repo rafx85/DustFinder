@@ -2,9 +2,7 @@
 param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Release',
-    [string]$HdtInstallDir,
-    [ValidatePattern('^\d+\.\d+\.\d+(\.\d+)?$')]
-    [string]$Version
+    [string]$HdtInstallDir
 )
 
 $ErrorActionPreference = 'Stop'
@@ -30,13 +28,9 @@ if ([string]::IsNullOrWhiteSpace($HdtInstallDir)) {
 }
 
 $hdtPath = [IO.Path]::GetFullPath($HdtInstallDir)
-$versionArgument = @()
-if (-not [string]::IsNullOrWhiteSpace($Version)) {
-    $versionArgument = @("-p:Version=$Version")
-}
-& dotnet restore (Join-Path $root 'DustFinder.sln') --configfile (Join-Path $root 'NuGet.Config') -p:HdtInstallDir="$hdtPath" @versionArgument
+& dotnet restore (Join-Path $root 'DustFinder.sln') --configfile (Join-Path $root 'NuGet.Config') -p:HdtInstallDir="$hdtPath"
 if ($LASTEXITCODE -ne 0) { throw 'dotnet restore failed.' }
-& dotnet build (Join-Path $root 'DustFinder.sln') --no-restore -c $Configuration -p:Platform=x64 -p:HdtInstallDir="$hdtPath" @versionArgument
+& dotnet build (Join-Path $root 'DustFinder.sln') --no-restore -c $Configuration -p:Platform=x64 -p:HdtInstallDir="$hdtPath"
 if ($LASTEXITCODE -ne 0) { throw 'dotnet build failed.' }
 & dotnet test (Join-Path $root 'tests\DustFinder.Core.Tests\DustFinder.Core.Tests.csproj') --no-restore -c $Configuration
 if ($LASTEXITCODE -ne 0) { throw 'dotnet test failed.' }
