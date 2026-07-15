@@ -59,7 +59,7 @@ jobs:
             gh release upload $tag $asset --repo '${{ github.repository }}' --clobber
           }
           else {
-            gh release create $tag $asset --repo '${{ github.repository }}' --target '${{ github.sha }}' --title "DustFinder $tag" --generate-notes --latest
+            gh release create $tag $asset --repo '${{ github.repository }}' --target '${{ github.sha }}' --title "$tag" --generate-notes --latest
           }
           if ($LASTEXITCODE -ne 0) {
             throw "Failed to publish or update GitHub Release $tag."
