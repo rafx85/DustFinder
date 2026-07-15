@@ -50,8 +50,11 @@ jobs:
           if ($pushedTag -ne $tag) {
             throw "Pushed tag $pushedTag does not match project version $tag."
           }
+          $previousErrorActionPreference = $ErrorActionPreference
+          $ErrorActionPreference = 'SilentlyContinue'
           gh release view $tag --repo '${{ github.repository }}' *> $null
           $releaseExists = $LASTEXITCODE -eq 0
+          $ErrorActionPreference = $previousErrorActionPreference
           if ($releaseExists) {
             gh release upload $tag $asset --repo '${{ github.repository }}' --clobber
           }
