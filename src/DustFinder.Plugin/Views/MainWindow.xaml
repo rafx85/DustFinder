@@ -413,7 +413,7 @@
 						<RowDefinition Height="Auto" />
 					</Grid.RowDefinitions>
 					<TextBlock Margin="3,3,3,8" TextWrapping="Wrap" Foreground="#AEB5C2"
-							   Text="These are your local variant-specific overrides. They are excluded from Collection and dust recommendations. Copy the JSON and paste it into Codex so the built-in recognition rules can be improved." />
+							   Text="These are your local variant-specific overrides. They are excluded from Collection and dust recommendations." />
 					<DataGrid x:Name="UncraftableReportsGrid" Grid.Row="1" ItemsSource="{Binding ManualUncraftableCards}"
 							  SelectedItem="{Binding SelectedManualUncraftableCard}" AlternationCount="2">
 						<DataGrid.Columns>
